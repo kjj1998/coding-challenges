@@ -7,15 +7,19 @@ import (
 )
 
 func main() {
-	inputFile := flag.String("-c", "files/test.txt", "a txt file")
+	bytesFlag := flag.Bool("c", false, "Count the number of bytes in the file")
 	flag.Parse()
 
-	file, err := os.Open(*inputFile)
+	files := flag.Args()
+
+	file, err := os.Open(files[0])
 	if err != nil {
 		panic(err)
 	}
 
 	stat, _ := file.Stat()
 
-	fmt.Printf("%d %s\n", stat.Size(), *inputFile)
+	if *bytesFlag {
+		fmt.Printf("%d %s\n", stat.Size(), files[0])
+	}
 }
