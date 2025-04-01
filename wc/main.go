@@ -15,6 +15,7 @@ func main() {
 	bytesFlag := flag.Bool("c", false, "Count the number of bytes in the file")
 	linesFlag := flag.Bool("l", false, "Count the number of lines in the file")
 	wordsFlag := flag.Bool("w", false, "Count the number of words in the file")
+	charactersFlag := flag.Bool("m", false, "Count the number of characters in the file")
 
 	flag.Parse()
 	files := flag.Args()
@@ -37,5 +38,15 @@ func main() {
 	} else if *wordsFlag {
 		numberOfWords := count.CountNumberOfWords(file)
 		fmt.Printf("%d %s\n", numberOfWords, files[0])
+	} else if *charactersFlag {
+		numberOfCharacters := count.CountNumberOfCharacters(file)
+		fmt.Printf("%d %s\n", numberOfCharacters, files[0])
+	} else {
+		numberOfBytes := count.CountNumberOfBytes(file)
+		numberOfLines := count.CountNumberOfLines(file)
+		file.Seek(0, 0)
+		numberOfWords := count.CountNumberOfWords(file)
+
+		fmt.Printf("%d %d %d %s\n", numberOfBytes, numberOfLines, numberOfWords, files[0])
 	}
 }

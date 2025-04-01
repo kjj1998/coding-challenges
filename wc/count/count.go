@@ -1,10 +1,12 @@
 package count
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"os"
 	"unicode"
+	"unicode/utf8"
 )
 
 var BUFFER_SIZE int = 32 * 1024
@@ -58,6 +60,28 @@ func CountNumberOfWords(file *os.File) int {
 				inWord = true
 				count++
 			}
+		}
+	}
+
+	return count
+}
+
+func CountNumberOfCharacters(file *os.File) int {
+	reader := bufio.NewReader(file)
+	count := 0
+
+	for {
+		r, _, err := reader.ReadRune()
+
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			break
+		}
+
+		if r != utf8.RuneError {
+			count++
 		}
 	}
 
