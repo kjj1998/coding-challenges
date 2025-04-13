@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 
 	count "github.com/kjj1998/coding-challenges/wc/count"
@@ -18,35 +20,71 @@ func main() {
 
 	flag.Parse()
 	files := flag.Args()
-	var reader *os.File
+
+	var file *os.File = nil
+	var reader *bytes.Reader = nil
 	var fileName string
+	var numberOfBytes int
+	var numberOfLines int
+	var numberOfWords int
+	var numberOfCharacters int
 
 	if len(files) == 1 {
-		file, _ := os.Open(files[0])
-		reader = file
+		file, _ = os.Open(files[0])
 		fileName = files[0]
 	} else {
-		reader = os.Stdin
+		var buf bytes.Buffer
+		_, err := io.Copy(&buf, os.Stdin)
+		if err != nil {
+			panic("stdin cannot be read")
+		}
+
+		reader = bytes.NewReader(buf.Bytes())
 		fileName = ""
 	}
 
 	if *bytesFlag {
-		numberOfBytes := count.CountNumberOfBytes(reader)
+		if file != nil {
+			numberOfBytes = count.CountNumberOfBytes(file)
+		} else if reader != nil {
+			numberOfBytes = count.CountNumberOfBytesFromStdin(reader)
+		}
 		fmt.Printf("%d %s\n", numberOfBytes, fileName)
 	} else if *linesFlag {
-		numberOfLines := count.CountNumberOfLines(reader)
+		if file != nil {
+			numberOfLines = count.CountNumberOfLines(file)
+		} else if reader != nil {
+			numberOfLines = count.CountNumberOfLinesFromStdin(reader)
+		}
 		fmt.Printf("%d %s\n", numberOfLines, fileName)
 	} else if *wordsFlag {
-		numberOfWords := count.CountNumberOfWords(reader)
+		if file != nil {
+			numberOfWords = count.CountNumberOfWords(file)
+		} else if reader != nil {
+			numberOfWords = count.CountNumberOfWordsFromStdin(reader)
+		}
 		fmt.Printf("%d %s\n", numberOfWords, fileName)
 	} else if *charactersFlag {
-		numberOfCharacters := count.CountNumberOfCharacters(reader)
+		if file != nil {
+			numberOfCharacters = count.CountNumberOfCharacters(file)
+		} else if reader != nil {
+			numberOfCharacters = count.CountNumberOfCharactersFromStdin(reader)
+		}
 		fmt.Printf("%d %s\n", numberOfCharacters, fileName)
 	} else {
-		numberOfBytes := count.CountNumberOfBytes(reader)
-		numberOfLines := count.CountNumberOfLines(reader)
-		reader.Seek(0, 0)
-		numberOfWords := count.CountNumberOfWords(reader)
+		if file != nil {
+			numberOfBytes = count.CountNumberOfBytes(file)
+			file.Seek(0, 0)
+			numberOfLines = count.CountNumberOfLines(file)
+			file.Seek(0, 0)
+			numberOfWords = count.CountNumberOfWords(file)
+		} else if reader != nil {
+			numberOfBytes = count.CountNumberOfBytesFromStdin(reader)
+			reader.Seek(0, io.SeekStart)
+			numberOfLines = count.CountNumberOfLinesFromStdin(reader)
+			reader.Seek(0, io.SeekStart)
+			numberOfWords = count.CountNumberOfWordsFromStdin(reader)
+		}
 
 		fmt.Printf("%d %d %d %s\n", numberOfLines, numberOfWords, numberOfBytes, fileName)
 	}
