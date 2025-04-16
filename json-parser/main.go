@@ -8,14 +8,15 @@ import (
 	parser "github.com/kjj1998/coding-challenges/json-parser/parser"
 )
 
-var JSON_LEFTBRACE = "{"
-var JSON_LEFTBRACKET = "["
-var JSON_RIGHTBRACE = "}"
-
 func main() {
 	data, _ := os.ReadFile("./tests/step2/valid.json")
 
 	tokens := lexer.Lex(data)
+
+	for _, v := range tokens {
+		fmt.Println(v)
+	}
+
 	jsonObject := parser.ParseValue(&tokens)
 
 	if jsonObject == nil {

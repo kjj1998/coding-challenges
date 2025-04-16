@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/kjj1998/coding-challenges/json-parser/lexer"
@@ -28,18 +29,20 @@ func ParseValue(tokens *[]lexer.Token) any {
 
 func parseObject(tokens *[]lexer.Token) map[string]any {
 	obj := make(map[string]any)
-	t := (*tokens)[0]
 
 	consume(tokens, models.LEFT_BRACE)
 
-	for len(*tokens) > 0 && t.Type != models.RIGHT_BRACE {
+	for len(*tokens) > 0 && (*tokens)[0].Type != models.RIGHT_BRACE {
 		key := parseString(tokens)
 		consume(tokens, models.COLON)
 		value := ParseValue(tokens)
 		obj[key] = value
 
-		if t.Type == models.COMMA {
+		if (*tokens)[0].Type == models.COMMA {
 			consume(tokens, models.COMMA)
+			if (*tokens)[0].Type != models.STRING {
+				panic("expected string after comma in object")
+			}
 		} else {
 			break
 		}
@@ -52,6 +55,7 @@ func parseObject(tokens *[]lexer.Token) map[string]any {
 func parseString(tokens *[]lexer.Token) string {
 	t := (*tokens)[0]
 	consume(tokens, models.STRING)
+	fmt.Printf("%s\n", (*tokens)[0].Value)
 
 	return t.Value
 }
