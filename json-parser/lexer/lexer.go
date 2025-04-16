@@ -1,5 +1,14 @@
 package lexer
 
+import (
+	"strings"
+	"unicode"
+
+	"github.com/kjj1998/coding-challenges/json-parser/models"
+)
+
+type Token = models.Token
+
 var JSON_SYNTAX = map[rune]struct{}{
 	'{': {},
 	'}': {},
@@ -11,49 +20,104 @@ var JSON_WHITESPACE = map[rune]struct{}{
 	'\n': {},
 }
 
-func Lex(data []byte) []string {
-	var tokens []string
+func Lex(data []byte) []Token {
+	tokens := []Token{}
+	i := 0
 
-	for len(data) != 0 {
-		json_string := lex_string(&data)
+	for i < len(data) {
+		c := data[i]
 
-		if json_string != "" {
-			tokens = append(tokens, json_string)
-			continue
-		}
-
-		if _, ok := JSON_SYNTAX[rune(data[0])]; ok {
-			tokens = append(tokens, string(data[0]))
-			data = data[1:]
-		} else if _, ok := JSON_WHITESPACE[rune(data[0])]; ok {
-			data = data[1:]
+		switch c {
+		case ' ', '\n', '\r', '\t': // check for whitespace
+			i++
+		case '{': // check for left brace
+			tokens = append(tokens, Token{Type: models.LEFT_BRACE, Value: "{"})
+			i++
+		case '}': // check for right brace
+			tokens = append(tokens, Token{Type: models.RIGHT_BRACE, Value: "}"})
+			i++
+		case ':': // check for colon
+			tokens = append(tokens, Token{Type: models.COLON, Value: ":"})
+			i++
+		case ',': // check for comma
+			tokens = append(tokens, Token{Type: models.COMMA, Value: ","})
+			i++
+		case '[': // check for left bracket
+			tokens = append(tokens, Token{Type: models.LEFT_BRACKET, Value: "["})
+			i++
+		case ']': // check for right bracket
+			tokens = append(tokens, Token{Type: models.RIGHT_BRACKET, Value: "]"})
+			i++
+		case '"': // check for string
+			str, consumed := lexString(data[i:])
+			tokens = append(tokens, Token{Type: models.STRING, Value: str})
+			i += consumed
+		default:
+			if isDigit(c) || c == '-' {
+				num, consumed := lexNumber(data)
+				tokens = append(tokens, Token{Type: models.NUMBER, Value: num})
+				i += consumed
+			} else if strings.HasPrefix(string(data[i:]), "true") {
+				tokens = append(tokens, Token{Type: models.TRUE, Value: "true"})
+				i += 4
+			} else if strings.HasPrefix(string(data[i:]), "false") {
+				tokens = append(tokens, Token{Type: models.FALSE, Value: "false"})
+				i += 5
+			} else if strings.HasPrefix(string(data[i:]), "null") {
+				tokens = append(tokens, Token{Type: models.NULL, Value: "null"})
+				i += 4
+			} else {
+				panic("unexpected character: " + string(c))
+			}
 		}
 	}
 
 	return tokens
 }
 
-func lex_string(data *[]byte) string {
-	var runes []rune
-	slice := *data
+func isDigit(b byte) bool {
+	return b >= '0' && b <= '9'
+}
 
-	if slice[0] == '"' {
-		slice = slice[1:]
-	} else {
-		return ""
+func lexNumber(data []byte) (string, int) {
+	i := 0
+	for i < len(data) && (unicode.IsDigit(rune(data[i])) || data[i] == '.' || data[i] == '-' || data[i] == 'e' || data[i] == 'E' || data[i] == '+') {
+		i++
 	}
 
-	for _, c := range slice {
+	return string(data[:i]), i
+}
 
-		if c == '"' {
-			slice = slice[len(runes)+1:]
-			*data = slice
-			return string(runes)
-		} else {
-			runes = append(runes, rune(c))
+func lexString(data []byte) (string, int) {
+	if len(data) == 0 || data[0] != '"' {
+		panic("string must start with '\"'")
+	}
+
+	i := 1 // skip opening quote
+
+	for i < len(data) {
+		if data[i] == '"' {
+			// Count backslashes before the quote
+			backslashCount := 0
+			j := i - 1
+			for j >= 0 && data[j] == '\\' {
+				backslashCount++
+				j--
+			}
+
+			// if backslash count is even, quote is not escaped
+			if backslashCount%2 == 0 {
+				break
+			}
 		}
+
+		i++
 	}
 
-	*data = slice
-	return string(runes)
+	if i >= len(data) {
+		panic("unterminated string")
+	}
+
+	raw := string(data[:i+1])
+	return raw, i + 1
 }

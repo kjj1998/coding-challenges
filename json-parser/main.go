@@ -5,17 +5,18 @@ import (
 	"os"
 
 	lexer "github.com/kjj1998/coding-challenges/json-parser/lexer"
+	parser "github.com/kjj1998/coding-challenges/json-parser/parser"
 )
 
 var JSON_LEFTBRACE = "{"
 var JSON_LEFTBRACKET = "["
+var JSON_RIGHTBRACE = "}"
 
 func main() {
-	data, _ := os.ReadFile("./tests/step1/valid.json")
+	data, _ := os.ReadFile("./tests/step2/valid.json")
 
 	tokens := lexer.Lex(data)
-
-	jsonObject := Parse(&tokens)
+	jsonObject := parser.ParseValue(&tokens)
 
 	if jsonObject == nil {
 		fmt.Println("invalid json")
@@ -26,53 +27,3 @@ func main() {
 		os.Exit(0)
 	}
 }
-
-func Parse(tokens *[]string) map[string]any {
-	obj := make(map[string]any)
-
-	if len(*tokens) == 0 {
-		return nil
-	}
-
-	t := (*tokens)[0]
-
-	if t == JSON_LEFTBRACE {
-		*tokens = (*tokens)[1:]
-	}
-
-	for len(*tokens) > 0 && (*tokens)[0] != "}" {
-
-	}
-
-	if t == "}" {
-		*tokens = (*tokens)[1:]
-	}
-	return obj
-}
-
-// func parseObject(tokens *[]string) map[string]interface{} {
-// 	jsonObject := make(map[string]interface{})
-// 	t := (*tokens)[0]
-
-// 	if t == "}" {
-// 		*tokens = (*tokens)[1:]
-// 		return jsonObject
-// 	}
-
-// 	for {
-// 		jsonKey := (*tokens)[0]
-// 		*tokens = (*tokens)[1:]
-
-// 		*tokens = (*tokens)[1:]
-// 		jsonValue := Parse(tokens)
-
-// 		jsonObject[jsonKey] = jsonValue
-
-// 		t = (*tokens)[0]
-// 		if t == "}" {
-// 			return jsonObject
-// 		}
-
-// 		*tokens = (*tokens)[1:]
-// 	}
-// }
