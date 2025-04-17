@@ -1,14 +1,14 @@
 package parser
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/kjj1998/coding-challenges/json-parser/lexer"
 	"github.com/kjj1998/coding-challenges/json-parser/models"
 )
 
-func ParseValue(tokens *[]lexer.Token) any {
+func ParseValue(tokens *[]lexer.Token) (any, error) {
 	if len(*tokens) == 0 {
 		panic("unexpected end of input")
 	}
@@ -17,31 +17,47 @@ func ParseValue(tokens *[]lexer.Token) any {
 
 	switch t.Type {
 	case models.LEFT_BRACE:
-		return parseObject(tokens)
+		obj, err := parseObject(tokens)
+		if err != nil {
+			return nil, err
+		}
+		return obj, nil
 	default:
 		if strings.HasPrefix(t.Value, "\"") {
-			return parseString(tokens)
+			str, err := parseString(tokens)
+			if err != nil {
+				return nil, err
+			}
+			return str, err
 		} else {
 			panic("unexpected token: " + t.Value)
 		}
 	}
 }
 
-func parseObject(tokens *[]lexer.Token) map[string]any {
+func parseObject(tokens *[]lexer.Token) (map[string]any, error) {
 	obj := make(map[string]any)
 
 	consume(tokens, models.LEFT_BRACE)
 
 	for len(*tokens) > 0 && (*tokens)[0].Type != models.RIGHT_BRACE {
-		key := parseString(tokens)
+		key, err := parseString(tokens)
+		if err != nil {
+			return nil, err
+		}
+
 		consume(tokens, models.COLON)
-		value := ParseValue(tokens)
+
+		value, err := ParseValue(tokens)
+		if err != nil {
+			return nil, err
+		}
 		obj[key] = value
 
 		if (*tokens)[0].Type == models.COMMA {
 			consume(tokens, models.COMMA)
 			if (*tokens)[0].Type != models.STRING {
-				panic("expected string after comma in object")
+				return nil, errors.New("expected string after comma in object")
 			}
 		} else {
 			break
@@ -49,15 +65,14 @@ func parseObject(tokens *[]lexer.Token) map[string]any {
 	}
 
 	consume(tokens, models.RIGHT_BRACE)
-	return obj
+	return obj, nil
 }
 
-func parseString(tokens *[]lexer.Token) string {
+func parseString(tokens *[]lexer.Token) (string, error) {
 	t := (*tokens)[0]
 	consume(tokens, models.STRING)
-	fmt.Printf("%s\n", (*tokens)[0].Value)
 
-	return t.Value
+	return t.Value, nil
 }
 
 func consume(tokens *[]lexer.Token, expected models.TokenType) {

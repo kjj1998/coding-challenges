@@ -12,10 +12,10 @@ import (
 func TestJsonParser(t *testing.T) {
 	t.Run("test step1/valid.json", func(t *testing.T) {
 		data, _ := os.ReadFile("./step1/valid.json")
-		tokens := lexer.Lex(data)
+		tokens, _ := lexer.Lex(data)
 
-		result := parser.ParseValue(&tokens)
-		expected := map[string]interface{}{}
+		result, _ := parser.ParseValue(&tokens)
+		expected := map[string]any{}
 
 		if result == nil {
 			t.Error("nil not expected")
@@ -28,7 +28,7 @@ func TestJsonParser(t *testing.T) {
 
 	t.Run("test step1/invalid.json", func(t *testing.T) {
 		data, _ := os.ReadFile("./step1/invalid.json")
-		tokens := lexer.Lex(data)
+		tokens, _ := lexer.Lex(data)
 
 		defer func() {
 			if r := recover(); r == nil {
@@ -37,5 +37,66 @@ func TestJsonParser(t *testing.T) {
 		}()
 
 		parser.ParseValue(&tokens)
+	})
+
+	t.Run("test step2/invalid.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step2/invalid.json")
+		tokens, _ := lexer.Lex(data)
+		_, err := parser.ParseValue(&tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "expected string after comma in object"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test step2/invalid2.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step2/invalid2.json")
+		_, err := lexer.Lex(data)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected character: k"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test step2/valid.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step2/valid.json")
+		tokens, _ := lexer.Lex(data)
+
+		result, _ := parser.ParseValue(&tokens)
+		expected := map[string]any{"\"key\"": "\"value\""}
+
+		if result == nil {
+			t.Error("nil not expected")
+		}
+
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("expected %v but got %v\n", expected, result)
+		}
+	})
+
+	t.Run("test step2/valid2.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step2/valid2.json")
+		tokens, _ := lexer.Lex(data)
+
+		result, _ := parser.ParseValue(&tokens)
+		expected := map[string]any{"\"key\"": "\"value\"", "\"key2\"": "\"value\""}
+
+		if result == nil {
+			t.Error("nil not expected")
+		}
+
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("expected %v but got %v\n", expected, result)
+		}
 	})
 }

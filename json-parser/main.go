@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	lexer "github.com/kjj1998/coding-challenges/json-parser/lexer"
@@ -9,22 +10,25 @@ import (
 )
 
 func main() {
-	data, _ := os.ReadFile("./tests/step2/valid.json")
+	data, _ := os.ReadFile("./tests/step2/invalid2.json")
 
-	tokens := lexer.Lex(data)
+	tokens, err := lexer.Lex(data)
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	for _, v := range tokens {
 		fmt.Println(v)
 	}
 
-	jsonObject := parser.ParseValue(&tokens)
+	jsonObject, err := parser.ParseValue(&tokens)
 
-	if jsonObject == nil {
-		fmt.Println("invalid json")
+	if err != nil {
+		log.Fatalf("invalid json: %s\n", err.Error())
 		os.Exit(1)
-	} else {
-		fmt.Println("valid json")
-		fmt.Println(jsonObject)
-		os.Exit(0)
 	}
+
+	fmt.Printf("valid json: %v\n", jsonObject)
+	os.Exit(0)
 }

@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"errors"
 	"strings"
 	"unicode"
 
@@ -20,7 +21,7 @@ var JSON_WHITESPACE = map[rune]struct{}{
 	'\n': {},
 }
 
-func Lex(data []byte) []Token {
+func Lex(data []byte) ([]Token, error) {
 	tokens := []Token{}
 	i := 0
 
@@ -67,12 +68,12 @@ func Lex(data []byte) []Token {
 				tokens = append(tokens, Token{Type: models.NULL, Value: "null"})
 				i += 4
 			} else {
-				panic("unexpected character: " + string(c))
+				return tokens, errors.New("unexpected character: " + string(c))
 			}
 		}
 	}
 
-	return tokens
+	return tokens, nil
 }
 
 func isDigit(b byte) bool {
