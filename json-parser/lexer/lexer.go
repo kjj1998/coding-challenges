@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -9,17 +10,6 @@ import (
 )
 
 type Token = models.Token
-
-var JSON_SYNTAX = map[rune]struct{}{
-	'{': {},
-	'}': {},
-	':': {},
-}
-
-var JSON_WHITESPACE = map[rune]struct{}{
-	' ':  {},
-	'\n': {},
-}
 
 func Lex(data []byte) ([]Token, error) {
 	tokens := []Token{}
@@ -55,7 +45,8 @@ func Lex(data []byte) ([]Token, error) {
 			i += consumed
 		default:
 			if isDigit(c) || c == '-' {
-				num, consumed := lexNumber(data)
+				num, consumed := lexNumber(data, i)
+				fmt.Printf("num = %s\n", num)
 				tokens = append(tokens, Token{Type: models.NUMBER, Value: num})
 				i += consumed
 			} else if strings.HasPrefix(string(data[i:]), "true") {
@@ -80,13 +71,13 @@ func isDigit(b byte) bool {
 	return b >= '0' && b <= '9'
 }
 
-func lexNumber(data []byte) (string, int) {
-	i := 0
-	for i < len(data) && (unicode.IsDigit(rune(data[i])) || data[i] == '.' || data[i] == '-' || data[i] == 'e' || data[i] == 'E' || data[i] == '+') {
-		i++
+func lexNumber(data []byte, i int) (string, int) {
+	start, end := i, i
+	for end < len(data) && (unicode.IsDigit(rune(data[end])) || data[end] == '.' || data[end] == '-' || data[end] == 'e' || data[end] == 'E' || data[end] == '+') {
+		end++
 	}
 
-	return string(data[:i]), i
+	return string(data[start:end]), end - start
 }
 
 func lexString(data []byte) (string, int) {

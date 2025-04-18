@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/kjj1998/coding-challenges/json-parser/lexer"
@@ -29,6 +30,18 @@ func ParseValue(tokens *[]lexer.Token) (any, error) {
 				return nil, err
 			}
 			return str, err
+		} else if strings.HasPrefix(t.Value, "true") {
+			consume(tokens, models.TRUE)
+			return true, nil
+		} else if strings.HasPrefix(t.Value, "false") {
+			consume(tokens, models.FALSE)
+			return false, nil
+		} else if strings.HasPrefix(t.Value, "null") {
+			consume(tokens, models.NULL)
+			return nil, nil
+		} else if isNumber(t.Value) {
+			consume(tokens, models.NUMBER)
+			return strconv.ParseFloat(t.Value, 64)
 		} else {
 			panic("unexpected token: " + t.Value)
 		}
@@ -82,4 +95,15 @@ func consume(tokens *[]lexer.Token, expected models.TokenType) {
 	}
 
 	*tokens = (*tokens)[1:]
+}
+
+func isNumber(value string) bool {
+	if _, err := strconv.Atoi(value); err == nil {
+		return true
+	}
+	if _, err := strconv.ParseFloat(value, 64); err == nil {
+		return true
+	}
+
+	return false
 }

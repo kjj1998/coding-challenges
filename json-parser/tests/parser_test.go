@@ -99,4 +99,34 @@ func TestJsonParser(t *testing.T) {
 			t.Errorf("expected %v but got %v\n", expected, result)
 		}
 	})
+
+	t.Run("test step3/valid.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step3/valid.json")
+		tokens, _ := lexer.Lex(data)
+
+		result, _ := parser.ParseValue(&tokens)
+		expected := map[string]any{"\"key1\"": true, "\"key2\"": false, "\"key3\"": nil, "\"key4\"": "\"value\"", "\"key5\"": float64(101)}
+
+		if result == nil {
+			t.Error("nil not expected")
+		}
+
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("expected %v but got %v\n", expected, result)
+		}
+	})
+
+	t.Run("test step3/invalid.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./step3/invalid.json")
+		_, err := lexer.Lex(data)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected character: F"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
 }

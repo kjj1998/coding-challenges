@@ -5,12 +5,12 @@ import (
 	"log"
 	"os"
 
-	lexer "github.com/kjj1998/coding-challenges/json-parser/lexer"
-	parser "github.com/kjj1998/coding-challenges/json-parser/parser"
+	"github.com/kjj1998/coding-challenges/json-parser/lexer"
+	"github.com/kjj1998/coding-challenges/json-parser/parser"
 )
 
 func main() {
-	data, _ := os.ReadFile("./tests/step2/invalid2.json")
+	data, _ := os.ReadFile("./tests/step3/invalid.json")
 
 	tokens, err := lexer.Lex(data)
 
