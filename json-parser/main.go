@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	data, _ := os.ReadFile("./tests/step3/invalid.json")
+	data, _ := os.ReadFile("./tests/step4/valid.json")
 
 	tokens, err := lexer.Lex(data)
 

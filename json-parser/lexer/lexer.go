@@ -2,7 +2,6 @@ package lexer
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"unicode"
 
@@ -46,7 +45,6 @@ func Lex(data []byte) ([]Token, error) {
 		default:
 			if isDigit(c) || c == '-' {
 				num, consumed := lexNumber(data, i)
-				fmt.Printf("num = %s\n", num)
 				tokens = append(tokens, Token{Type: models.NUMBER, Value: num})
 				i += consumed
 			} else if strings.HasPrefix(string(data[i:]), "true") {

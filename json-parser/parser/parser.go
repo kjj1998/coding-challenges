@@ -23,6 +23,12 @@ func ParseValue(tokens *[]lexer.Token) (any, error) {
 			return nil, err
 		}
 		return obj, nil
+	case models.LEFT_BRACKET:
+		arr, err := parseArray(tokens)
+		if err != nil {
+			return nil, err
+		}
+		return arr, nil
 	default:
 		if strings.HasPrefix(t.Value, "\"") {
 			str, err := parseString(tokens)
@@ -81,11 +87,34 @@ func parseObject(tokens *[]lexer.Token) (map[string]any, error) {
 	return obj, nil
 }
 
+func parseArray(tokens *[]lexer.Token) ([]any, error) {
+	slice := []any{}
+
+	consume(tokens, models.LEFT_BRACKET)
+
+	for len(*tokens) > 0 && (*tokens)[0].Type != models.RIGHT_BRACKET {
+		value, err := ParseValue(tokens)
+		if err != nil {
+			return nil, err
+		}
+		slice = append(slice, value)
+
+		if (*tokens)[0].Type == models.COMMA {
+			consume(tokens, models.COMMA)
+		}
+	}
+
+	consume(tokens, models.RIGHT_BRACKET)
+	return slice, nil
+}
+
 func parseString(tokens *[]lexer.Token) (string, error) {
 	t := (*tokens)[0]
 	consume(tokens, models.STRING)
 
-	return t.Value, nil
+	unquotedString, err := strconv.Unquote(t.Value)
+
+	return unquotedString, err
 }
 
 func consume(tokens *[]lexer.Token, expected models.TokenType) {
