@@ -105,7 +105,7 @@ func TestJsonParser(t *testing.T) {
 		tokens, _ := lexer.Lex(data)
 
 		result, _ := parser.ParseValue(&tokens)
-		expected := map[string]any{"key1": true, "key2": false, "key3": nil, "key4": "value", "key5": float64(101)}
+		expected := map[string]any{"key1": true, "key2": false, "key3": nil, "key4": "value", "key5": 101}
 
 		if result == nil {
 			t.Error("nil not expected")
@@ -135,7 +135,7 @@ func TestJsonParser(t *testing.T) {
 		tokens, _ := lexer.Lex(data)
 
 		result, _ := parser.ParseValue(&tokens)
-		expected := map[string]any{"key": "value", "key-l": []any{}, "key-n": float64(101), "key-o": map[string]any{}}
+		expected := map[string]any{"key": "value", "key-l": []any{}, "key-n": 101, "key-o": map[string]any{}}
 
 		if result == nil {
 			t.Error("nil not expected")
@@ -151,7 +151,7 @@ func TestJsonParser(t *testing.T) {
 		tokens, _ := lexer.Lex(data)
 
 		result, _ := parser.ParseValue(&tokens)
-		expected := map[string]any{"key": "value", "key-l": []any{"list value"}, "key-n": float64(101), "key-o": map[string]any{"inner key": "inner value"}}
+		expected := map[string]any{"key": "value", "key-l": []any{"list value"}, "key-n": 101, "key-o": map[string]any{"inner key": "inner value"}}
 
 		if result == nil {
 			t.Error("nil not expected")
