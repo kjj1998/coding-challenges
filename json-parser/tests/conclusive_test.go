@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -12,12 +11,8 @@ import (
 
 func TestConclusive(t *testing.T) {
 	t.Run("test test_suite/pass1.json", func(t *testing.T) {
-		data, _ := os.ReadFile("./test_suite/passtest.json")
+		data, _ := os.ReadFile("./test_suite/pass1.json")
 		tokens, _ := lexer.Lex(data)
-
-		for _, v := range tokens {
-			fmt.Println(v)
-		}
 
 		result, _ := parser.ParseValue(&tokens)
 		expected := []any{
@@ -72,6 +67,43 @@ func TestConclusive(t *testing.T) {
 			1e-1,
 			1e00, 2e+00, 2e-00,
 			"rosebud",
+		}
+
+		if result == nil {
+			t.Error("nil not expected")
+		}
+
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("expected %v but got %v\n", expected, result)
+		}
+	})
+
+	t.Run("test test_suite/pass2.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/pass2.json")
+		tokens, _ := lexer.Lex(data)
+
+		result, _ := parser.ParseValue(&tokens)
+		expected := []any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{[]any{"Not too deep"}}}}}}}}}}}}}}}}}}}
+
+		if result == nil {
+			t.Error("nil not expected")
+		}
+
+		if !reflect.DeepEqual(result, expected) {
+			t.Errorf("expected %v but got %v\n", expected, result)
+		}
+	})
+
+	t.Run("test test_suite/pass3.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/pass3.json")
+		tokens, _ := lexer.Lex(data)
+
+		result, _ := parser.ParseValue(&tokens)
+		expected := map[string]any{
+			"JSON Test Pattern pass3": map[string]any{
+				"The outermost value": "must be an object or array.",
+				"In this test":        "It is an object.",
+			},
 		}
 
 		if result == nil {
