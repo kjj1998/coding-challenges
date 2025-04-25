@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -14,8 +15,10 @@ func Lex(data []byte) ([]Token, error) {
 	tokens := []Token{}
 	i := 0
 
+	fmt.Printf("length: %d\n", len(data))
 	for i < len(data) {
 		c := data[i]
+		fmt.Printf("character: %c\n", c)
 
 		switch c {
 		case ' ', '\n', '\r', '\t': // check for whitespace
@@ -56,13 +59,22 @@ func Lex(data []byte) ([]Token, error) {
 			} else if strings.HasPrefix(string(data[i:]), "null") {
 				tokens = append(tokens, Token{Type: models.NULL, Value: "null"})
 				i += 4
+			} else if isIdentifierStart(c) {
+				str, consumed := lexString(data[i:])
+				tokens = append(tokens, Token{Type: models.STRING, Value: str})
+				i += consumed
 			} else {
+				fmt.Println("\"unexpected character: \"" + string(c))
 				return tokens, errors.New("unexpected character: " + string(c))
 			}
 		}
 	}
 
 	return tokens, nil
+}
+
+func isIdentifierStart(c byte) bool {
+	return unicode.IsLetter(rune(c)) || c == '_'
 }
 
 func isDigit(b byte) bool {
@@ -79,9 +91,9 @@ func lexNumber(data []byte, i int) (string, int) {
 }
 
 func lexString(data []byte) (string, int) {
-	if len(data) == 0 || data[0] != '"' {
-		panic("string must start with '\"'")
-	}
+	// if len(data) == 0 || data[0] != '"' {
+	// 	panic("string must start with '\"'")
+	// }
 
 	i := 1 // skip opening quote
 

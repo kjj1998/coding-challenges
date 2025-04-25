@@ -2,6 +2,7 @@ package parser
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode/utf16"
@@ -11,12 +12,49 @@ import (
 	"github.com/kjj1998/coding-challenges/json-parser/models"
 )
 
+func Parse(tokens []lexer.Token) (any, error) {
+	value, err := ParseValue(&tokens)
+	if err != nil {
+		return nil, err
+	}
+
+	// Enforce JSON root to be either object or array
+	switch value.(type) {
+	case map[string]any, []any:
+		// Good
+	default:
+		return nil, errors.New("a JSON payload should be an object or array, not a " + getTypeName(value))
+	}
+
+	if len(tokens) > 0 {
+		return nil, errors.New("unexpected extra tokens after top-level value")
+	}
+
+	return value, nil
+}
+
+func getTypeName(value any) string {
+	switch value.(type) {
+	case string:
+		return "string"
+	case float64, int:
+		return "number"
+	case bool:
+		return "boolean"
+	case nil:
+		return "null"
+	default:
+		return "unknown"
+	}
+}
+
 func ParseValue(tokens *[]lexer.Token) (any, error) {
 	if len(*tokens) == 0 {
 		panic("unexpected end of input")
 	}
 
 	t := (*tokens)[0]
+	fmt.Printf("token: %s\n", t.Value)
 
 	switch t.Type {
 	case models.LEFT_BRACE:
@@ -73,6 +111,7 @@ func parseNumber(token *lexer.Token) any {
 
 func parseObject(tokens *[]lexer.Token) (map[string]any, error) {
 	obj := make(map[string]any)
+	fmt.Printf("token: %s\n", (*tokens)[0].Value)
 
 	consume(tokens, models.LEFT_BRACE)
 
@@ -116,8 +155,10 @@ func parseArray(tokens *[]lexer.Token) ([]any, error) {
 		}
 		slice = append(slice, value)
 
-		if (*tokens)[0].Type == models.COMMA {
+		if len(*tokens) > 0 && (*tokens)[0].Type == models.COMMA {
 			consume(tokens, models.COMMA)
+		} else if len(*tokens) == 0 {
+			return nil, errors.New("unclosed array")
 		}
 	}
 
@@ -200,6 +241,7 @@ func decodeJSONString(input string) (string, error) {
 
 func parseString(tokens *[]lexer.Token) (string, error) {
 	t := (*tokens)[0]
+	fmt.Printf("string token: %s\n", t.Value)
 	consume(tokens, models.STRING)
 
 	decoded, err := decodeJSONString(t.Value)
@@ -207,32 +249,6 @@ func parseString(tokens *[]lexer.Token) (string, error) {
 		return "", err
 	}
 	return decoded, nil
-
-	// // return unquotedString, nil
-	// t := (*tokens)[0]
-	// consume(tokens, models.STRING)
-
-	// val := t.Value
-
-	// // Attempt unquoting directly first
-	// unquoted, err := strconv.Unquote(val)
-	// if err == nil {
-	// 	return unquoted, nil
-	// }
-
-	// // If it wasn't quoted, wrap it and try again
-	// wrapped := `"` + val + `"`
-	// fmt.Printf("wrapped: %s\n", wrapped)
-	// unquoted, err = strconv.Unquote(wrapped)
-	// fmt.Printf("unqouted: %s\n", unquoted)
-	// fmt.Println("\\/\\\"\uCAFE\uBABE\uAB98\uFCDE\ubcda\uef4A\b\f\n\r\t`1~!@#$%^&*()_+-=[]{}|;:',./<>?")
-	// if err != nil {
-	// 	// Still not valid? Fallback to stripping quotes manually if present
-	// 	// if len(val) >= 2 && ((val[0] == '"' && val[len(val)-1] == '"') || (val[0] == '\'' && val[len(val)-1] == '\'')) {
-	// 	// 	val = val[1 : len(val)-1]
-	// 	// }
-	// 	return "\\/\\\"\uCAFE\uBABE\uAB98\uFCDE\ubcda\uef4A\b\f\n\r\t`1~!@#$%^&*()_+-=[]{}|;:',./<>?", nil
-	// }
 }
 
 func consume(tokens *[]lexer.Token, expected models.TokenType) {

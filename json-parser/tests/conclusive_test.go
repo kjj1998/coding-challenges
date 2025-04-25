@@ -114,4 +114,52 @@ func TestConclusive(t *testing.T) {
 			t.Errorf("expected %v but got %v\n", expected, result)
 		}
 	})
+
+	t.Run("test test_suite/fail1.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail1.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "a JSON payload should be an object or array, not a string"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail2.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail2.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unclosed array"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail3.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail3.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "invalid JSON string format"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
 }

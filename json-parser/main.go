@@ -13,7 +13,7 @@ func main() {
 	data, _ := os.ReadFile("./tests/step4/valid.json")
 
 	tokens, err := lexer.Lex(data)
-
+	fmt.Println(err)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
