@@ -42,7 +42,10 @@ func Lex(data []byte) ([]Token, error) {
 			tokens = append(tokens, Token{Type: models.RIGHT_BRACKET, Value: "]"})
 			i++
 		case '"': // check for string
-			str, consumed := lexString(data[i:])
+			str, consumed, err := lexString(data[i:])
+			if err != nil {
+				return nil, err
+			}
 			tokens = append(tokens, Token{Type: models.STRING, Value: str})
 			i += consumed
 		default:
@@ -60,11 +63,14 @@ func Lex(data []byte) ([]Token, error) {
 				tokens = append(tokens, Token{Type: models.NULL, Value: "null"})
 				i += 4
 			} else if isIdentifierStart(c) {
-				str, consumed := lexString(data[i:])
+				str, consumed, err := lexString(data[i:])
+				if err != nil {
+					return nil, err
+				}
 				tokens = append(tokens, Token{Type: models.STRING, Value: str})
 				i += consumed
 			} else {
-				fmt.Println("\"unexpected character: \"" + string(c))
+				fmt.Println("unexpected character: " + string(c))
 				return tokens, errors.New("unexpected character: " + string(c))
 			}
 		}
@@ -90,7 +96,7 @@ func lexNumber(data []byte, i int) (string, int) {
 	return string(data[start:end]), end - start
 }
 
-func lexString(data []byte) (string, int) {
+func lexString(data []byte) (string, int, error) {
 	// if len(data) == 0 || data[0] != '"' {
 	// 	panic("string must start with '\"'")
 	// }
@@ -117,9 +123,9 @@ func lexString(data []byte) (string, int) {
 	}
 
 	if i >= len(data) {
-		panic("unterminated string")
+		return "", 0, errors.New("unterminated string")
 	}
 
 	raw := string(data[:i+1])
-	return raw, i + 1
+	return raw, i + 1, nil
 }

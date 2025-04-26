@@ -50,7 +50,7 @@ func getTypeName(value any) string {
 
 func ParseValue(tokens *[]lexer.Token) (any, error) {
 	if len(*tokens) == 0 {
-		panic("unexpected end of input")
+		return nil, errors.New("unexpected end of input")
 	}
 
 	t := (*tokens)[0]
@@ -90,7 +90,7 @@ func ParseValue(tokens *[]lexer.Token) (any, error) {
 			num := parseNumber(&t)
 			return num, nil
 		} else {
-			panic("unexpected token: " + t.Value)
+			return nil, errors.New("unexpected token: " + t.Value)
 		}
 	}
 }
@@ -149,6 +149,10 @@ func parseArray(tokens *[]lexer.Token) ([]any, error) {
 	consume(tokens, models.LEFT_BRACKET)
 
 	for len(*tokens) > 0 && (*tokens)[0].Type != models.RIGHT_BRACKET {
+		if (*tokens)[0].Type == models.COMMA {
+			return nil, errors.New("unexpected comma in array")
+		}
+
 		value, err := ParseValue(tokens)
 		if err != nil {
 			return nil, err
@@ -157,6 +161,10 @@ func parseArray(tokens *[]lexer.Token) ([]any, error) {
 
 		if len(*tokens) > 0 && (*tokens)[0].Type == models.COMMA {
 			consume(tokens, models.COMMA)
+
+			if len(*tokens) > 0 && (*tokens)[0].Type == models.RIGHT_BRACKET {
+				return nil, errors.New("extra comma in array")
+			}
 		} else if len(*tokens) == 0 {
 			return nil, errors.New("unclosed array")
 		}
@@ -253,6 +261,7 @@ func parseString(tokens *[]lexer.Token) (string, error) {
 
 func consume(tokens *[]lexer.Token, expected models.TokenType) {
 	t := (*tokens)[0]
+	fmt.Printf("token consume: %s\n", t.Value)
 	if len(*tokens) == 0 || t.Type != expected {
 		panic("unexpected token: " + t.Value)
 	}
@@ -261,12 +270,18 @@ func consume(tokens *[]lexer.Token, expected models.TokenType) {
 }
 
 func isNumber(value string) bool {
+	fmt.Printf("possible number: %s\n", value)
 	if _, err := strconv.Atoi(value); err == nil {
-		return true
+		return !hasLeadingZero(value)
 	}
 	if _, err := strconv.ParseFloat(value, 64); err == nil {
 		return true
 	}
 
 	return false
+}
+
+func hasLeadingZero(s string) bool {
+	// If it starts with 0 and is longer than 1 character, it's a leading zero
+	return len(s) > 1 && s[0] == '0'
 }

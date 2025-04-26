@@ -162,4 +162,213 @@ func TestConclusive(t *testing.T) {
 			t.Errorf("expected error %q, got %q", expected, err.Error())
 		}
 	})
+
+	t.Run("test test_suite/fail4.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail4.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "extra comma in array"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail5.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail5.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected comma in array"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail6.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail6.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected comma in array"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail7.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail7.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected extra tokens after top-level value"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail8.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail8.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected extra tokens after top-level value"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail9.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail9.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "expected string after comma in object"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail10.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail10.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected extra tokens after top-level value"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail11.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail11.json")
+		_, err := lexer.Lex(data)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected character: +"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail12.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail12.json")
+		_, err := lexer.Lex(data)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unterminated string"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail13.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail13.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected token: 013"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail14.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail14.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unexpected end of input"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail15.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail15.json")
+		tokens, _ := lexer.Lex(data)
+
+		_, err := parser.Parse(tokens)
+
+		if err == nil {
+			t.Fatal("expected an error, got nil")
+		}
+
+		expected := "unknown escape sequence: \\x"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail16.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail16.json")
+		_, err := lexer.Lex(data)
+
+		expected := "unexpected character: \\"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
+
+	t.Run("test test_suite/fail17.json", func(t *testing.T) {
+		data, _ := os.ReadFile("./test_suite/fail17.json")
+		tokens, _ := lexer.Lex(data)
+		_, err := parser.Parse(tokens)
+
+		expected := "unknown escape sequence: \\0"
+		if err.Error() != expected {
+			t.Errorf("expected error %q, got %q", expected, err.Error())
+		}
+	})
 }
