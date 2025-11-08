@@ -56,20 +56,26 @@ func (h *HuffTree) Weight() int {
 	return h.root.Weight()
 }
 
-func (h *HuffTree) PreOrderTraversal(visit func(HuffBaseNode)) {
-	preOrderHelper(h.root, visit)
+func (h *HuffTree) PreOrderTraversal(visit func(HuffBaseNode, byte), code byte) {
+	preOrderHelper(h.root, code, visit)
 }
 
-func preOrderHelper(node HuffBaseNode, visit func(HuffBaseNode)) {
+func preOrderHelper(node HuffBaseNode, code byte, visit func(HuffBaseNode, byte)) {
 	if node == nil {
 		return
 	}
 
-	visit(node)
+	visit(node, code)
 
 	if !node.IsLeaf() {
 		internal := node.(*HuffInternalNode)
-		preOrderHelper(internal.left, visit)
-		preOrderHelper(internal.right, visit)
+		preOrderHelper(internal.left, (code << 1), visit)
+		preOrderHelper(internal.right, (code<<1)|1, visit)
 	}
+}
+
+type HuffCode struct {
+	freq int
+	code byte
+	bits int
 }

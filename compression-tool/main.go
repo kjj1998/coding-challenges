@@ -25,12 +25,12 @@ func main() {
 
 	tree := huffman.BuildHuffmanTree(items)
 
-	tree.PreOrderTraversal(func(node huffman.HuffBaseNode) {
+	tree.PreOrderTraversal(func(node huffman.HuffBaseNode, code byte) {
 		if node.IsLeaf() {
 			leaf := node.(*huffman.HuffLeafNode)
-			fmt.Printf("Leaf element: %c (weight: %d)\n", leaf.Element(), leaf.Weight())
+			fmt.Printf("Leaf element: %c (weight: %d, code: %b)\n", leaf.Element(), leaf.Weight(), code)
 		} else {
 			fmt.Printf("Internal (weight: %d)\n", node.Weight())
 		}
-	})
+	}, 0)
 }
