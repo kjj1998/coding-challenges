@@ -4,6 +4,8 @@ import (
 	"container/heap"
 )
 
+/* PriorityQueue implementation */
+
 type PriorityQueue []HuffBaseNode
 
 func (pq PriorityQueue) Len() int { return len(pq) }
@@ -30,6 +32,8 @@ func (pq *PriorityQueue) Pop() any {
 	return item
 }
 
+/* Huffman tree/table functions */
+
 func BuildHuffmanTree(frequencies map[rune]int) *HuffTree {
 	pq := make(PriorityQueue, 0, len(frequencies))
 
@@ -48,7 +52,7 @@ func BuildHuffmanTree(frequencies map[rune]int) *HuffTree {
 		left := heap.Pop(&pq).(HuffBaseNode)
 		right := heap.Pop(&pq).(HuffBaseNode)
 
-		internal := &HuffInternalNode{
+		internal := &HuffIntermediateNode{
 			left:   left,
 			right:  right,
 			weight: left.Weight() + right.Weight(),
@@ -60,4 +64,16 @@ func BuildHuffmanTree(frequencies map[rune]int) *HuffTree {
 	root := heap.Pop(&pq).(HuffBaseNode)
 
 	return &HuffTree{root: root}
+}
+
+func BuildHuffmanTable(huffTree *HuffTree) map[rune]HuffCode {
+	huffTable := huffTree.PreOrderTraversal(func(node HuffBaseNode, code byte, bits int, huffTable map[rune]HuffCode) {
+		if node.IsLeaf() {
+			leaf := node.(*HuffLeafNode)
+			huffCode := HuffCode{Freq: leaf.Weight(), Code: code, Bits: bits}
+			huffTable[leaf.Element()] = huffCode
+		}
+	})
+
+	return huffTable
 }

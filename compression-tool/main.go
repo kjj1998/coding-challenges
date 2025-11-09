@@ -23,14 +23,10 @@ func main() {
 		'C': 32, 'D': 42, 'E': 120, 'K': 7, 'L': 42, 'M': 24, 'U': 37, 'Z': 2,
 	}
 
-	tree := huffman.BuildHuffmanTree(items)
+	huffTree := huffman.BuildHuffmanTree(items)
+	huffTable := huffman.BuildHuffmanTable(huffTree)
 
-	tree.PreOrderTraversal(func(node huffman.HuffBaseNode, code byte) {
-		if node.IsLeaf() {
-			leaf := node.(*huffman.HuffLeafNode)
-			fmt.Printf("Leaf element: %c (weight: %d, code: %b)\n", leaf.Element(), leaf.Weight(), code)
-		} else {
-			fmt.Printf("Internal (weight: %d)\n", node.Weight())
-		}
-	}, 0)
+	for k, v := range huffTable {
+		fmt.Printf("key = %c, freq = %d, code = %b, bits = %d\n", k, v.Freq, v.Code, v.Bits)
+	}
 }
