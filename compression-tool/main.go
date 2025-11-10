@@ -29,4 +29,13 @@ func main() {
 	for k, v := range huffTable {
 		fmt.Printf("key = %c, freq = %d, code = %b, bits = %d\n", k, v.Freq, v.Code, v.Bits)
 	}
+
+	fmt.Printf("\n")
+
+	huffman.WriteEncodedFile("./files/encoded/test", huffTable)
+	newHuffTable := huffman.ReadEncodedFile("./files/encoded/test")
+
+	for k, v := range newHuffTable {
+		fmt.Printf("key = %c, freq = %d, code = %b, bits = %d\n", k, v.Freq, v.Code, v.Bits)
+	}
 }

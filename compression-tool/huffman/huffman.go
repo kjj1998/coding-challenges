@@ -2,6 +2,8 @@ package huffman
 
 import (
 	"container/heap"
+	"encoding/binary"
+	"os"
 )
 
 /* PriorityQueue implementation */
@@ -74,6 +76,51 @@ func BuildHuffmanTable(huffTree *HuffTree) map[rune]HuffCode {
 			huffTable[leaf.Element()] = huffCode
 		}
 	})
+
+	return huffTable
+}
+
+func WriteEncodedFile(filename string, huffTable map[rune]HuffCode) {
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	numChars := uint32(len(huffTable))
+	binary.Write(file, binary.LittleEndian, numChars)
+
+	for char, huffCode := range huffTable {
+		binary.Write(file, binary.LittleEndian, uint32(char))
+		binary.Write(file, binary.LittleEndian, uint8(huffCode.Bits))
+		binary.Write(file, binary.LittleEndian, huffCode.Code)
+		binary.Write(file, binary.LittleEndian, uint32(huffCode.Freq))
+	}
+}
+
+func ReadEncodedFile(filename string) map[rune]HuffCode {
+	file, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	var numChars uint32
+	binary.Read(file, binary.LittleEndian, &numChars)
+
+	huffTable := make(map[rune]HuffCode)
+	for range numChars {
+		var char uint32
+		var bits uint8
+		var code byte
+		var freq uint32
+		binary.Read(file, binary.LittleEndian, &char)
+		binary.Read(file, binary.LittleEndian, &bits)
+		binary.Read(file, binary.LittleEndian, &code)
+		binary.Read(file, binary.LittleEndian, &freq)
+
+		huffTable[rune(char)] = HuffCode{Bits: int(bits), Code: code, Freq: int(freq)}
+	}
 
 	return huffTable
 }
