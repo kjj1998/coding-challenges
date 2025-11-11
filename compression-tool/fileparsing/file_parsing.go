@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 )
 
 func check(err error, filePath string) error {
@@ -21,25 +20,15 @@ func check(err error, filePath string) error {
 
 func ParseFile(filePath string) (map[rune]int, error) {
 	data, err := os.ReadFile(filePath)
-
 	if err != nil {
 		return nil, check(err, filePath)
 	}
 
 	text := string(data)
-	words := strings.Fields(text)
 	frequency := map[rune]int{}
 
-	for _, word := range words {
-		for _, ch := range word {
-			_, ok := frequency[ch]
-
-			if !ok {
-				frequency[ch] = 1
-			} else {
-				frequency[ch]++
-			}
-		}
+	for _, ch := range text {
+		frequency[ch]++
 	}
 
 	return frequency, nil
