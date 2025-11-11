@@ -18,18 +18,11 @@ func check(err error, filePath string) error {
 	return fmt.Errorf("%s: %s", filePath, err.Error())
 }
 
-func ParseFile(filePath string) (map[rune]int, error) {
+func ParseFile(filePath string) (string, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, check(err, filePath)
+		return "", check(err, filePath)
 	}
 
-	text := string(data)
-	frequency := map[rune]int{}
-
-	for _, ch := range text {
-		frequency[ch]++
-	}
-
-	return frequency, nil
+	return string(data), nil
 }

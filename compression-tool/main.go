@@ -1,41 +1,20 @@
 package main
 
 import (
-	"fmt"
-
 	fileparsing "github.com/kjj1998/coding-challenges/compression-tool/fileparsing"
 	huffman "github.com/kjj1998/coding-challenges/compression-tool/huffman"
 )
 
 func main() {
-	fileparsing.ParseFile("./files/test.txt")
+	text, err := fileparsing.ParseFile("./files/test.txt")
 
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// for key, val := range data {
-	// 	fmt.Printf("Key: %c, Value: %d\n", key, val)
-	// }
-
-	// Some items and their priorities.
-	items := map[rune]int{
-		'C': 32, 'D': 42, 'E': 120, 'K': 7, 'L': 42, 'M': 24, 'U': 37, 'Z': 2,
+	if err != nil {
+		panic(err)
 	}
 
-	huffTree := huffman.BuildHuffmanTree(items)
-	huffTable := huffman.BuildHuffmanTable(huffTree)
+	// compress file
+	huffman.CompressFile(text, "./files/encoded/test")
 
-	for k, v := range huffTable {
-		fmt.Printf("key = %c, freq = %d, code = %b, bits = %d\n", k, v.Freq, v.Code, v.Bits)
-	}
-
-	fmt.Printf("\n")
-
-	huffman.WriteEncodedFile("./files/encoded/test", huffTable)
-	newHuffTable := huffman.ReadEncodedFile("./files/encoded/test")
-
-	for k, v := range newHuffTable {
-		fmt.Printf("key = %c, freq = %d, code = %b, bits = %d\n", k, v.Freq, v.Code, v.Bits)
-	}
+	// decompress file
+	huffman.DecompressFile("./files/encoded/test", "./files/decoded/decoded-test.txt")
 }

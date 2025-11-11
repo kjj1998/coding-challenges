@@ -64,8 +64,8 @@ func (h *HuffTree) Weight() int {
 	return h.root.Weight()
 }
 
-func (h *HuffTree) PreOrderTraversal(visit func(HuffBaseNode, byte, int, map[rune]HuffCode)) map[rune]HuffCode {
-	var code byte = 0
+func (h *HuffTree) PreOrderTraversal(visit func(HuffBaseNode, uint64, int, map[rune]HuffCode)) map[rune]HuffCode {
+	var code uint64 = 0
 	var bits int = 0
 	huffTable := map[rune]HuffCode{}
 
@@ -74,7 +74,7 @@ func (h *HuffTree) PreOrderTraversal(visit func(HuffBaseNode, byte, int, map[run
 	return huffTable
 }
 
-func preOrderHelper(node HuffBaseNode, code byte, bits int, huffTable map[rune]HuffCode, visit func(HuffBaseNode, byte, int, map[rune]HuffCode)) {
+func preOrderHelper(node HuffBaseNode, code uint64, bits int, huffTable map[rune]HuffCode, visit func(HuffBaseNode, uint64, int, map[rune]HuffCode)) {
 	if node == nil {
 		return
 	}
@@ -92,6 +92,6 @@ func preOrderHelper(node HuffBaseNode, code byte, bits int, huffTable map[rune]H
 
 type HuffCode struct {
 	Freq int
-	Code byte
+	Code uint64  // Changed from byte to uint64 to support codes up to 64 bits
 	Bits int
 }
