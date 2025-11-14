@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 /* PriorityQueue implementation */
@@ -36,9 +37,18 @@ func (pq *PriorityQueue) Pop() any {
 	return item
 }
 
-func buildHuffmanTree(frequencies map[rune]int) *HuffTree {
-	pq := make(PriorityQueue, 0, len(frequencies))
+func trackTime(start time.Time) {
+	elapsed := time.Since(start)
+	fmt.Printf("Time taken: %s\n", elapsed)
+}
 
+/* Compression and encoding functions */
+
+func buildHuffmanTree(frequencies map[rune]int) *HuffTree {
+	fmt.Printf("Building huffman tree...\n")
+	start := time.Now()
+
+	pq := make(PriorityQueue, 0, len(frequencies))
 	for char, freq := range frequencies {
 		leaf := &HuffLeafNode{
 			element: char,
@@ -49,7 +59,6 @@ func buildHuffmanTree(frequencies map[rune]int) *HuffTree {
 	}
 
 	heap.Init(&pq)
-
 	for pq.Len() > 1 {
 		left := heap.Pop(&pq).(HuffBaseNode)
 		right := heap.Pop(&pq).(HuffBaseNode)
@@ -62,13 +71,18 @@ func buildHuffmanTree(frequencies map[rune]int) *HuffTree {
 
 		heap.Push(&pq, internal)
 	}
-
 	root := heap.Pop(&pq).(HuffBaseNode)
+
+	trackTime(start)
+	fmt.Println("Huffman tree built!")
 
 	return &HuffTree{root: root}
 }
 
 func buildHuffmanTable(huffTree *HuffTree) map[rune]HuffCode {
+	fmt.Printf("Building huffman table...\n")
+	start := time.Now()
+
 	huffTable := huffTree.PreOrderTraversal(func(node HuffBaseNode, code uint64, bits int, huffTable map[rune]HuffCode) {
 		if node.IsLeaf() {
 			leaf := node.(*HuffLeafNode)
@@ -77,10 +91,16 @@ func buildHuffmanTable(huffTree *HuffTree) map[rune]HuffCode {
 		}
 	})
 
+	trackTime(start)
+	fmt.Println("Huffman table built!")
+
 	return huffTable
 }
 
 func encodeData(text string, huffTable map[rune]HuffCode) []byte {
+	fmt.Printf("Encoding data...\n")
+	start := time.Now()
+
 	var result []byte
 	var currentByte byte = 0
 	var bitPosition int = 0
@@ -106,10 +126,16 @@ func encodeData(text string, huffTable map[rune]HuffCode) []byte {
 		result = append(result, currentByte)
 	}
 
+	trackTime(start)
+	fmt.Println("Data encoded!")
+
 	return result
 }
 
 func writeEncodedDataToFile(filename string, text string, huffTable map[rune]HuffCode, compressedData []byte) {
+	fmt.Printf("Writing encoded data to file...\n")
+	start := time.Now()
+
 	file, err := os.Create(filename)
 	if err != nil {
 		panic(err)
@@ -123,7 +149,7 @@ func writeEncodedDataToFile(filename string, text string, huffTable map[rune]Huf
 	for char, huffCode := range huffTable {
 		binary.Write(file, binary.LittleEndian, uint32(char))
 		binary.Write(file, binary.LittleEndian, uint8(huffCode.Bits))
-		binary.Write(file, binary.LittleEndian, huffCode.Code)  // Now writes uint64
+		binary.Write(file, binary.LittleEndian, huffCode.Code) // Now writes uint64
 		binary.Write(file, binary.LittleEndian, uint32(huffCode.Freq))
 	}
 
@@ -133,16 +159,15 @@ func writeEncodedDataToFile(filename string, text string, huffTable map[rune]Huf
 
 	// Write the compressed data
 	file.Write(compressedData)
+
+	trackTime(start)
+	fmt.Println("Encoded data written to file!")
 }
 
 func CompressFile(text string, filename string) {
 	frequencies := map[rune]int{}
 	for _, ch := range text {
 		frequencies[ch]++
-	}
-
-	for k, v := range frequencies {
-		fmt.Printf("key: %q, value: %d\n", k, v)
 	}
 
 	huffmanTree := buildHuffmanTree(frequencies)
@@ -152,39 +177,12 @@ func CompressFile(text string, filename string) {
 	writeEncodedDataToFile(filename, text, huffmanTable, encodedData)
 }
 
-func decodeData(tree *HuffTree, encodedData []byte, textLength uint64) string {
-	var result []rune
-	currentNode := tree.Root()
-
-	for _, b := range encodedData {
-		for bitPos := 7; bitPos >= 0; bitPos-- {
-			if uint64(len(result)) == textLength {
-				return string(result)
-			}
-
-			bit := (b >> bitPos) & 1
-
-			if !currentNode.IsLeaf() {
-				intermediate := currentNode.(*HuffIntermediateNode)
-				if bit == 0 {
-					currentNode = intermediate.Left()
-				} else {
-					currentNode = intermediate.Right()
-				}
-			}
-
-			if currentNode.IsLeaf() {
-				leaf := currentNode.(*HuffLeafNode)
-				result = append(result, leaf.Element())
-				currentNode = tree.Root()
-			}
-		}
-	}
-
-	return string(result)
-}
+/* Decompression and decoding functions */
 
 func readEncodedDataFromFile(filename string) (map[rune]HuffCode, []byte, uint64) {
+	fmt.Printf("Read encoded data from file...\n")
+	start := time.Now()
+
 	file, err := os.Open(filename)
 	if err != nil {
 		panic(err)
@@ -199,7 +197,7 @@ func readEncodedDataFromFile(filename string) (map[rune]HuffCode, []byte, uint64
 	for range numChars {
 		var char uint32
 		var bits uint8
-		var code uint64  // Changed from byte to uint64
+		var code uint64 // Changed from byte to uint64
 		var freq uint32
 		binary.Read(file, binary.LittleEndian, &char)
 		binary.Read(file, binary.LittleEndian, &bits)
@@ -219,21 +217,16 @@ func readEncodedDataFromFile(filename string) (map[rune]HuffCode, []byte, uint64
 		panic(err)
 	}
 
+	trackTime(start)
+	fmt.Println("Encoded data read from file!")
+
 	return huffTable, encodedData, textLength
 }
 
-func writeDecodedDataToFile(filename string, decodedData string) error {
-	file, err := os.Create(filename)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	_, err = file.WriteString(decodedData)
-	return err
-}
-
 func buildDecodingTree(huffTable map[rune]HuffCode) *HuffTree {
+	fmt.Printf("Build decoding tree from huffman table...\n")
+	start := time.Now()
+
 	// Start with empty root
 	root := &HuffIntermediateNode{weight: 0}
 
@@ -284,7 +277,65 @@ func buildDecodingTree(huffTable map[rune]HuffCode) *HuffTree {
 		}
 	}
 
+	trackTime(start)
+	fmt.Println("Decoding tree built from huffman table!")
+
 	return &HuffTree{root: root}
+}
+
+func decodeData(tree *HuffTree, encodedData []byte, textLength uint64) string {
+	fmt.Printf("Decode data...\n")
+	start := time.Now()
+
+	var result []rune
+	currentNode := tree.Root()
+
+	for _, b := range encodedData {
+		for bitPos := 7; bitPos >= 0; bitPos-- {
+			if uint64(len(result)) == textLength {
+				trackTime(start)
+				fmt.Println("Data decoded!")
+				return string(result)
+			}
+
+			bit := (b >> bitPos) & 1
+
+			if !currentNode.IsLeaf() {
+				intermediate := currentNode.(*HuffIntermediateNode)
+				if bit == 0 {
+					currentNode = intermediate.Left()
+				} else {
+					currentNode = intermediate.Right()
+				}
+			}
+
+			if currentNode.IsLeaf() {
+				leaf := currentNode.(*HuffLeafNode)
+				result = append(result, leaf.Element())
+				currentNode = tree.Root()
+			}
+		}
+	}
+
+	return string(result)
+}
+
+func writeDecodedDataToFile(filename string, decodedData string) error {
+	fmt.Printf("Writing decoded data to file...\n")
+	start := time.Now()
+
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(decodedData)
+
+	trackTime(start)
+	fmt.Println("Decoded data written to file!")
+
+	return err
 }
 
 func DecompressFile(encodedFilename string, decodedFilename string) {
@@ -295,7 +346,6 @@ func DecompressFile(encodedFilename string, decodedFilename string) {
 		frequencies[char] = code.Freq
 	}
 	huffmanTree := buildDecodingTree(huffmanTable)
-
 	decodedData := decodeData(huffmanTree, encodedData, textLength)
 
 	writeDecodedDataToFile(decodedFilename, decodedData)
