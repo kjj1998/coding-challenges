@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	text, err := fileparsing.ParseFile("./files/test.txt")
+	text, err := fileparsing.ParseFile("./files/les-mis.txt")
 
 	if err != nil {
 		panic(err)
@@ -16,9 +16,9 @@ func main() {
 
 	// compress and encode file
 	fmt.Println("Compressing and encoding file...")
-	huffman.CompressFile(text, "./files/encoded/test")
+	huffman.CompressFile(text, "./files/encoded/les-mis-encoded")
 
 	// decompress and decode file
 	fmt.Println("\nDecompressing and decoding file...")
-	huffman.DecompressFile("./files/encoded/test", "./files/decoded/decoded-test.txt")
+	huffman.DecompressFile("./files/encoded/les-mis-encoded", "./files/decoded/les-mis-decoded.txt")
 }
