@@ -42,4 +42,21 @@ func TestHuffmanMethods(t *testing.T) {
 			t.Errorf("got %d want %d", gotHuffTable[wantCharacter].Bits, wantCharacterBits)
 		}
 	})
+
+	t.Run("Encodes simple text correctly", func(t *testing.T) {
+		// Simple example: 'A' -> 0, 'B' ->
+		huffTable := map[rune]HuffCode{
+			'A': {Code: 0b0, Bits: 1, Freq: 2},
+			'B': {Code: 0b1, Bits: 1, Freq: 1},
+		}
+		text := "AAB"
+		// Expected: bits 001 + padding = 00100000 = 0x20
+
+		got := encodeData(text, huffTable)
+		want := []byte{0x20}
+
+		if len(got) != len(want) || got[0] != want[0] {
+			t.Errorf("got %08b want %08b", got, want)
+		}
+	})
 }
