@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/kjj1998/coding-challenges/cut/tool"
 )
 
 func main() {
@@ -11,5 +13,9 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Printf("fieldPos: %s, file: %s\n", *fieldPos, *file)
+	values := tool.Cut(fieldPos, file)
+
+	for _, val := range values {
+		fmt.Println(val)
+	}
 }
