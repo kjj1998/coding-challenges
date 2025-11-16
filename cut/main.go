@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/kjj1998/coding-challenges/cut/tool"
+	cut "github.com/kjj1998/coding-challenges/cut/tool"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 		file = flag.Args()[0]
 	}
 
-	values := tool.Cut(fieldPos, delimiter, &file)
+	values := cut.Cut(fieldPos, delimiter, &file)
 
 	for _, val := range values {
 		fmt.Println(val)
