@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func Cut(fieldPos *string, filePath *string) []string {
+func Cut(fieldPos *string, delimiter *string, filePath *string) []string {
 	file, err := os.Open(*filePath)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
@@ -21,7 +21,7 @@ func Cut(fieldPos *string, filePath *string) []string {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		splitValues := strings.Split(line, "\t")
+		splitValues := strings.Split(line, *delimiter)
 
 		for i, val := range splitValues {
 			if len(data) < i+1 {
