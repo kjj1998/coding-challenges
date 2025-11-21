@@ -9,15 +9,20 @@ import (
 )
 
 func Cut(fieldPositions []int, delimiter *string, filePath *string) [][]string {
-	file, err := os.Open(*filePath)
-	if err != nil {
-		log.Fatalf("Error opening file: %v", err)
+	var scanner *bufio.Scanner
+
+	if *filePath != "" && *filePath != "-" {
+		file, err := os.Open(*filePath)
+		if err != nil {
+			log.Fatalf("Error opening file: %v", err)
+		}
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
+	} else {
+		scanner = bufio.NewScanner(os.Stdin)
 	}
-	defer file.Close()
 
 	var data [][]string
-
-	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		line := scanner.Text()
