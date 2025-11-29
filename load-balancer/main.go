@@ -1,25 +1,98 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
+	"time"
 )
+
+type backend struct {
+	Address string
+	Healthy bool
+}
 
 var (
-	backendUrls = []string{
-		"http://localhost:6050",
-		"http://localhost:6060",
-		"http://localhost:6070",
+	backends = []*backend{
+		newBackend("6050"),
+		newBackend("6060"),
+		newBackend("6070"),
 	}
 	counter uint64
+	mu      sync.RWMutex
 )
 
+// Health check goroutine
+func healthCheck(interval time.Duration, healthcheck string) {
+	ticker := time.NewTicker(interval)
+	for range ticker.C {
+		for _, backend := range backends {
+			go checkHealth(backend, healthcheck)
+		}
+	}
+}
+
+func checkHealth(backend *backend, healthcheck string) {
+	// Use a short timeout for health checks
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(backend.Address + healthcheck)
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if err != nil || resp.StatusCode != http.StatusOK {
+		if backend.Healthy {
+			fmt.Printf("Backend %s is DOWN\n", backend.Address)
+		}
+		backend.Healthy = false
+	} else {
+		if !backend.Healthy {
+			fmt.Printf("Backend %s is UP\n", backend.Address)
+		}
+		backend.Healthy = true
+		resp.Body.Close()
+	}
+}
+
+// Get next healthy backend using round-robin
+func getNextBackend() *backend {
+	mu.RLock()
+	defer mu.RUnlock()
+
+	// Try each backend starting from current index
+	for range backends {
+		index := atomic.AddUint64(&counter, 1) - 1
+		backend := backends[index%uint64(len(backends))]
+
+		if backend.Healthy {
+			return backend
+		}
+	}
+
+	return nil
+}
+
+func newBackend(port string) *backend {
+	s := backend{Address: "http://localhost:" + port}
+	s.Healthy = true
+
+	return &s
+}
+
 func server(w http.ResponseWriter, r *http.Request) {
-	// Buffer all output for this requst
+	// Get the next available server
+	backend := getNextBackend()
+	if backend == nil {
+		http.Error(w, "No healthy backends", http.StatusServiceUnavailable)
+		return
+	}
+
+	// Buffer all output for this request
 	var sb strings.Builder
 
 	sb.WriteString(fmt.Sprintf("Received request from %v\n", r.RemoteAddr))
@@ -28,10 +101,7 @@ func server(w http.ResponseWriter, r *http.Request) {
 	sb.WriteString(fmt.Sprintf("User-Agent: %v\n", r.UserAgent()))
 	sb.WriteString(fmt.Sprintf("Accept: %v\n", r.Header["Accept"]))
 
-	index := atomic.AddUint64(&counter, 1) - 1
-	backendUrl := backendUrls[index%uint64(len(backendUrls))]
-
-	resp, err := http.Get(backendUrl)
+	resp, err := http.Get(backend.Address)
 	if err != nil {
 		log.Fatalf("Error making GET request: %v", err)
 	}
@@ -51,6 +121,15 @@ func server(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	healthcheck := flag.String("h", "/healthcheck", "The backend health check endpoint, defaults to /healthcheck")
+	interval := flag.Int("i", 10, "The time interval (in seconds) used to check backend health, defaults to 10")
+
+	flag.Parse()
+
+	// start health checks in the background (check every 10 seconds)
+	go healthCheck(time.Duration(*interval)*time.Second, *healthcheck)
+
 	handler := http.HandlerFunc(server)
+	fmt.Println("Load balancer running on :6000")
 	log.Fatal(http.ListenAndServe(":6000", handler))
 }
