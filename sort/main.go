@@ -20,8 +20,6 @@ func main() {
 	}
 
 	strs := utils.Read(&filePath)
-
-	// testStr := []string{"banana", "app", "apple", "bat"}
 	var results []string
 
 	if *radixSort {
