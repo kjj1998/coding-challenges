@@ -1,30 +1,34 @@
 package utils
 
-import "slices"
+import (
+	"slices"
+)
 
-func Sort(strs *[]string, unique bool) {
-	slices.Sort(*strs)
+func Sort(strs []string) []string {
+	slices.Sort(strs)
 
-	if unique {
-		if len(*strs) < 2 {
-			return
-		}
+	return strs
+}
 
-		lastUniqueIndex := 0
-		curIndex := 1
-
-		for curIndex < len(*strs) {
-			lastUnique := (*strs)[lastUniqueIndex]
-			cur := (*strs)[curIndex]
-
-			if cur != lastUnique {
-				(*strs)[lastUniqueIndex+1] = cur
-				lastUniqueIndex++
-			}
-
-			curIndex++
-		}
-
-		*strs = (*strs)[:lastUniqueIndex]
+func Unique(results *[]string) {
+	if len(*results) < 2 {
+		return
 	}
+
+	lastUniqueIndex := 0
+	curIndex := 1
+
+	for curIndex < len(*results) {
+		lastUnique := (*results)[lastUniqueIndex]
+		cur := (*results)[curIndex]
+
+		if cur != lastUnique {
+			(*results)[lastUniqueIndex+1] = cur
+			lastUniqueIndex++
+		}
+
+		curIndex++
+	}
+
+	*results = (*results)[:lastUniqueIndex+1]
 }
