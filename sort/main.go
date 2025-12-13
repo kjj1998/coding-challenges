@@ -32,8 +32,7 @@ func main() {
 	} else if *quickSort {
 		results = algo.QuickSort(*strs)
 	} else if *heapSort {
-		algo.HeapSort(*strs)
-		results = *strs
+		results = algo.HeapSort(*strs)
 	} else {
 		results = utils.Sort(*strs)
 	}

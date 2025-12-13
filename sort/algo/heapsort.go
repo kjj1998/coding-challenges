@@ -24,7 +24,7 @@ func buildHeap(arr []string) {
 	}
 }
 
-func HeapSort(arr []string) {
+func HeapSort(arr []string) []string {
 	heapSize := len(arr)
 	buildHeap(arr)
 	for i := heapSize - 1; i > 0; i-- {
@@ -32,4 +32,6 @@ func HeapSort(arr []string) {
 		heapSize -= 1
 		maxHeapify(arr, heapSize, 0)
 	}
+
+	return arr
 }
