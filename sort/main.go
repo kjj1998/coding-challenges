@@ -13,6 +13,7 @@ func main() {
 	radixSort := flag.Bool("radixsort", false, "radix sort flag, determines whether results should be sorted using the radix sort algorithm")
 	mergeSort := flag.Bool("mergesort", false, "merge sort flag, determines whether results should be sorted using the merge sort algorithm")
 	quickSort := flag.Bool("quicksort", false, "quick sort flag, determines whether results should be sorted using the quick sort algorithm")
+	heapSort := flag.Bool("heapsort", false, "heap sort flag, determines whether results should be sorted using the heap sort algorithm")
 
 	flag.Parse()
 
@@ -30,6 +31,9 @@ func main() {
 		results = algo.MergeSort(*strs)
 	} else if *quickSort {
 		results = algo.QuickSort(*strs)
+	} else if *heapSort {
+		algo.HeapSort(*strs)
+		results = *strs
 	} else {
 		results = utils.Sort(*strs)
 	}
