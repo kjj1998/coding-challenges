@@ -10,7 +10,8 @@ import (
 
 func main() {
 	unique := flag.Bool("u", false, "unique flag, determines whether sorted results should show unique values i.e. no duplicates")
-	radixSort := flag.Bool("radixsort", false, "radixsort flag, determines whether results should be sorted using the radix sort algorithm")
+	radixSort := flag.Bool("radixsort", false, "radix sort flag, determines whether results should be sorted using the radix sort algorithm")
+	mergeSort := flag.Bool("mergesort", false, "merge sort flag, determines whether results should be sorted using the merge sort algorithm")
 
 	flag.Parse()
 
@@ -24,6 +25,8 @@ func main() {
 
 	if *radixSort {
 		results = algo.RadixSort(*strs)
+	} else if *mergeSort {
+		results = algo.MergeSort(*strs)
 	} else {
 		results = utils.Sort(*strs)
 	}
