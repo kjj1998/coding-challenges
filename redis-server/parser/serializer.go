@@ -1,27 +1,26 @@
 package parser
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"strconv"
 )
 
 // Serialize returns the serialized form of the commands given.
 // The serialized form is based on the Redis Serialization Protocol (RESP)
 // For e.g. the string "OK" is serialized to "+OK\r\n"
 // The integer 1000 is serialized to ":1000\r\n"
-func Serialize(commands []string) (string, error) {
+func Serialize(commands []string) ([]byte, error) {
 	if len(commands) == 0 {
-		return "", errors.New("No command given")
+		return nil, errors.New("No command given")
 	}
 
-	serializedCommand := "*" + strconv.Itoa(len(commands)) + "\r\n"
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("*%d\r\n", len(commands)))
 
 	for _, command := range commands {
-		commandByteLength := len(command)
-
-		serializedCommand = serializedCommand + fmt.Sprintf("$%d\r\n%s\r\n", commandByteLength, command)
+		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(command), command))
 	}
 
-	return serializedCommand, nil
+	return buf.Bytes(), nil
 }
