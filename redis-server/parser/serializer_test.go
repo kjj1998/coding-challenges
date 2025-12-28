@@ -9,8 +9,8 @@ func TestSerialize(t *testing.T) {
 		got, _ := Serialize(testCommand)
 		want := "*1\r\n$4\r\nPING\r\n"
 
-		if string(got) != want {
-			t.Errorf("got %q want %q", string(got), want)
+		if got.String() != want {
+			t.Errorf("got %q want %q", got.String(), want)
 		}
 	})
 
@@ -20,8 +20,8 @@ func TestSerialize(t *testing.T) {
 		got, _ := Serialize(testCommand)
 		want := "*1\r\n$4\r\n1000\r\n"
 
-		if string(got) != want {
-			t.Errorf("got %q want %q", string(got), want)
+		if got.String() != want {
+			t.Errorf("got %q want %q", got.String(), want)
 		}
 	})
 
@@ -31,8 +31,8 @@ func TestSerialize(t *testing.T) {
 		got, _ := Serialize(testCommand)
 		want := "*2\r\n$4\r\nPING\r\n$2\r\nOK\r\n"
 
-		if string(got) != want {
-			t.Errorf("got %q want %q", string(got), want)
+		if got.String() != want {
+			t.Errorf("got %q want %q", got.String(), want)
 		}
 	})
 }

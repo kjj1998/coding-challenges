@@ -10,9 +10,9 @@ import (
 // The serialized form is based on the Redis Serialization Protocol (RESP)
 // For e.g. the string "OK" is serialized to "+OK\r\n"
 // The integer 1000 is serialized to ":1000\r\n"
-func Serialize(commands []string) ([]byte, error) {
+func Serialize(commands []string) (bytes.Buffer, error) {
 	if len(commands) == 0 {
-		return nil, errors.New("No command given")
+		return bytes.Buffer{}, errors.New("No command given")
 	}
 
 	var buf bytes.Buffer
@@ -22,5 +22,5 @@ func Serialize(commands []string) ([]byte, error) {
 		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(command), command))
 	}
 
-	return buf.Bytes(), nil
+	return buf, nil
 }
