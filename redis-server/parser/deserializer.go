@@ -2,7 +2,9 @@ package parser
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 func Deserialize(buf bytes.Buffer) ([]string, error) {
@@ -13,16 +15,28 @@ func Deserialize(buf bytes.Buffer) ([]string, error) {
 		result := parseSimpleString(bytes)
 		return []string{result}, nil
 	case '-':
-		result := parseError(bytes)
+		result, err := parseError(bytes)
+		if err != nil {
+			return []string{}, err
+		}
 		return []string{result}, nil
 	case ':':
-		result := parseInteger(bytes)
+		result, err := parseInteger(bytes)
+		if err != nil {
+			return []string{}, err
+		}
 		return []string{result}, nil
 	case '$':
-		result, _ := parseBulkString(bytes)
+		result, _, err := parseBulkString(bytes)
+		if err != nil {
+			return []string{}, err
+		}
 		return []string{result}, nil
 	case '*':
-		result := parseArray(bytes)
+		result, err := parseArray(bytes)
+		if err != nil {
+			return []string{}, err
+		}
 		return result, nil
 	}
 
@@ -42,20 +56,25 @@ func parseSimpleString(bytes []byte) string {
 	return string(bytes[1:endIndex])
 }
 
-func parseError(bytes []byte) string {
-	endIndex := 0
+func parseError(bytes []byte) (string, error) {
+	clrfIndex := 0
 	for i := range bytes {
 		if bytes[i] != '\r' {
-			endIndex++
+			clrfIndex++
 		} else {
 			break
 		}
 	}
 
-	return string(bytes[1:endIndex])
+	errMessage := string(bytes[1:clrfIndex])
+	if !strings.HasPrefix(errMessage, "ERR") {
+		return "", fmt.Errorf("Error message must begin with ERR: %s", errMessage)
+	}
+
+	return errMessage, nil
 }
 
-func parseInteger(bytes []byte) string {
+func parseInteger(bytes []byte) (string, error) {
 	endIndex := 0
 	for i := range bytes {
 		if bytes[i] != '\r' {
@@ -65,29 +84,45 @@ func parseInteger(bytes []byte) string {
 		}
 	}
 
-	return string(bytes[1:endIndex])
-}
-
-func parseBulkString(bytes []byte) (string, int) {
-	endIndex := 0
-
-	for i := range bytes {
-		if bytes[i] != '\r' {
-			endIndex++
-		} else {
-			break
-		}
-	}
-	bulkStringByteLength, err := strconv.Atoi(string(bytes[1:endIndex]))
+	integerInput := string(bytes[1:endIndex])
+	_, err := strconv.Atoi(integerInput)
 	if err != nil {
-		panic("error reading bulk string length")
+		return "", fmt.Errorf("non integer input: %s", integerInput)
 	}
-	bulkString := string(bytes[endIndex+2 : endIndex+2+bulkStringByteLength])
 
-	return bulkString, endIndex - 1
+	return integerInput, nil
 }
 
-func parseArray(bytes []byte) []string {
+func parseBulkString(bytes []byte) (string, int, error) {
+	firstCrlfIndex := 0
+
+	for i := range bytes {
+		if bytes[i] != '\r' {
+			firstCrlfIndex++
+		} else {
+			break
+		}
+	}
+
+	bulkStringByteLengthInput := string(bytes[1:firstCrlfIndex])
+	bulkStringByteLength, err := strconv.Atoi(bulkStringByteLengthInput)
+	if err != nil {
+		return "", -1, fmt.Errorf("non integer value given for bulk string length: %s", bulkStringByteLengthInput)
+	}
+	if bulkStringByteLength == -1 {
+		return "null", -1, nil
+	}
+
+	secondClrfIndex := firstCrlfIndex + 2 + bulkStringByteLength
+	if secondClrfIndex >= len(bytes) || bytes[secondClrfIndex] != '\r' {
+		return "", -1, fmt.Errorf("incorrect bulk string length input: %d", bulkStringByteLength)
+	}
+	bulkString := string(bytes[firstCrlfIndex+2 : secondClrfIndex])
+
+	return bulkString, firstCrlfIndex - 1, nil
+}
+
+func parseArray(bytes []byte) ([]string, error) {
 	endIndex := 0
 	for i := range bytes {
 		if bytes[i] != '\r' {
@@ -101,14 +136,21 @@ func parseArray(bytes []byte) []string {
 	if err != nil {
 		panic("error reading array length")
 	}
+	if arrayLength == -1 {
+		return []string{"null"}, nil
+	}
 
 	results := []string{}
 	arrayIndex := endIndex + 2
 	for range arrayLength {
-		bulkString, elementCount := parseBulkString(bytes[arrayIndex:])
+		bulkString, elementCount, err := parseBulkString(bytes[arrayIndex:])
+		if err != nil {
+			return []string{}, err
+		}
+
 		results = append(results, bulkString)
 		arrayIndex += elementCount + 2 + len(bulkString) + 2 + 1
 	}
 
-	return results
+	return results, nil
 }
