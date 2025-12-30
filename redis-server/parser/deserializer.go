@@ -143,6 +143,10 @@ func parseArray(bytes []byte) ([]string, error) {
 	results := []string{}
 	arrayIndex := endIndex + 2
 	for range arrayLength {
+		if arrayIndex >= len(bytes) {
+			return []string{}, fmt.Errorf("array length is incorrect: %d", arrayLength)
+		}
+
 		bulkString, elementCount, err := parseBulkString(bytes[arrayIndex:])
 		if err != nil {
 			return []string{}, err
@@ -150,6 +154,10 @@ func parseArray(bytes []byte) ([]string, error) {
 
 		results = append(results, bulkString)
 		arrayIndex += elementCount + 2 + len(bulkString) + 2 + 1
+	}
+
+	if arrayIndex < len(bytes) && bytes[arrayIndex] == '$' {
+		return []string{}, fmt.Errorf("array length is incorrect: %d", arrayLength)
 	}
 
 	return results, nil

@@ -214,7 +214,7 @@ func TestDeserialize(t *testing.T) {
 		}
 	})
 
-	// deserizlie null value for bulk string
+	// deserialize null value for bulk string
 	t.Run("Deserialize $-1\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$-1\r\n")
 		got, _ := Deserialize(*serializedCommand)
@@ -237,6 +237,28 @@ func TestDeserialize(t *testing.T) {
 			if got[i] != want[i] {
 				t.Errorf("got %q want %q", got[i], want[i])
 			}
+		}
+	})
+
+	// deserialize array where the length of the array given is lesser than the actual number of elements
+	t.Run("Deserialize *1\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
+		serializedCommand := bytes.NewBufferString("*1\r\n$3\r\nget\r\n$3\r\nkey\r\n")
+		_, gotErr := Deserialize(*serializedCommand)
+		wantErr := "array length is incorrect: 1"
+
+		if gotErr.Error() != wantErr {
+			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
+		}
+	})
+
+	// deserialize array where the length of the array given is more than the actual number of elements
+	t.Run("Deserialize *4\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
+		serializedCommand := bytes.NewBufferString("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n")
+		_, gotErr := Deserialize(*serializedCommand)
+		wantErr := "array length is incorrect: 4"
+
+		if gotErr.Error() != wantErr {
+			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
 		}
 	})
 }

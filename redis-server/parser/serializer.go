@@ -19,7 +19,7 @@ func Serialize(commands []string) (bytes.Buffer, error) {
 	buf.WriteString(fmt.Sprintf("*%d\r\n", len(commands)))
 
 	for _, command := range commands {
-		buf.WriteString(fmt.Sprintf("$%d\r\n%s\r\n", len(command), command))
+		fmt.Fprintf(&buf, "$%d\r\n%s\r\n", len(command), command)
 	}
 
 	return buf, nil
