@@ -16,11 +16,15 @@ func Serialize(commands []string) (bytes.Buffer, error) {
 	}
 
 	var buf bytes.Buffer
-	buf.WriteString(fmt.Sprintf("*%d\r\n", len(commands)))
+	fmt.Fprintf(&buf, "*%d\r\n", len(commands))
 
 	for _, command := range commands {
 		fmt.Fprintf(&buf, "$%d\r\n%s\r\n", len(command), command)
 	}
 
 	return buf, nil
+}
+
+func SerializeSimpleString(command string) []byte {
+	return []byte("+" + command + "\r\n")
 }

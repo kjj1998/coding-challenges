@@ -10,7 +10,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize +OK\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("+OK\r\n")
 
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"OK"}
 
 		for i := range got {
@@ -24,7 +24,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize +hello world\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("+hello world\r\n")
 
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"hello world"}
 
 		for i := range got {
@@ -38,7 +38,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize -ERR unknown command\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("-ERR unknown command\r\n")
 
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"ERR unknown command"}
 
 		for i := range got {
@@ -52,7 +52,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize -unknown command\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("-unknown command\r\n")
 
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "Error message must begin with ERR: unknown command"
 
 		if gotErr.Error() != wantErr {
@@ -64,7 +64,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize :1000\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString(":1000\r\n")
 
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"1000"}
 
 		for i := range got {
@@ -78,7 +78,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize :abcde\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString(":abcde\r\n")
 
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "non integer input: abcde"
 
 		if gotErr.Error() != wantErr {
@@ -90,7 +90,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize $5\r\nhello\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$5\r\nhello\r\n")
 
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"hello"}
 
 		for i := range got {
@@ -104,7 +104,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize $abcde\r\nhello\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$abcde\r\nhello\r\n")
 
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "non integer value given for bulk string length: abcde"
 
 		if gotErr.Error() != wantErr {
@@ -116,7 +116,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize $10\r\nhello\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$10\r\nhello\r\n")
 
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "incorrect bulk string length input: 10"
 
 		if gotErr.Error() != wantErr {
@@ -128,7 +128,7 @@ func TestDeserialize(t *testing.T) {
 	t.Run("Deserialize $3\r\nhelloworld\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$3\r\nhelloworld\r\n")
 
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "incorrect bulk string length input: 3"
 
 		if gotErr.Error() != wantErr {
@@ -139,7 +139,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array with two bulk strings
 	t.Run("Deserialize *2\r\n$5\r\nhello\r\n$3\r\nbar\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*2\r\n$5\r\nhello\r\n$3\r\nbar\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"hello", "bar"}
 
 		for i := range got {
@@ -152,7 +152,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array with one bulk string
 	t.Run("Deserialize *1\r\n$4\r\nping\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*1\r\n$4\r\nping\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"ping"}
 
 		for i := range got {
@@ -165,7 +165,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array with two bulk strings
 	t.Run("Deserialize *2\r\n$4\r\necho\r\n$11\r\nhello world\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*2\r\n$4\r\necho\r\n$11\r\nhello world\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"echo", "hello world"}
 
 		for i := range got {
@@ -178,7 +178,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array with two bulk strings
 	t.Run("Deserialize *2\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*2\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"get", "key"}
 
 		for i := range got {
@@ -191,7 +191,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize bulk string with no string
 	t.Run("Deserialize $0\r\n\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$0\r\n\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{""}
 
 		for i := range got {
@@ -204,7 +204,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array with no elements
 	t.Run("Deserialize $0\r\n\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$0\r\n\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{""}
 
 		for i := range got {
@@ -217,7 +217,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize null value for bulk string
 	t.Run("Deserialize $-1\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$-1\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"null"}
 
 		for i := range got {
@@ -230,7 +230,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize null value for array
 	t.Run("Deserialize *-1\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*-1\r\n")
-		got, _ := Deserialize(*serializedCommand)
+		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"null"}
 
 		for i := range got {
@@ -243,7 +243,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array where the length of the array given is lesser than the actual number of elements
 	t.Run("Deserialize *1\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*1\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "array length is incorrect: 1"
 
 		if gotErr.Error() != wantErr {
@@ -254,7 +254,7 @@ func TestDeserialize(t *testing.T) {
 	// deserialize array where the length of the array given is more than the actual number of elements
 	t.Run("Deserialize *4\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		_, gotErr := Deserialize(*serializedCommand)
+		_, gotErr := Deserialize(serializedCommand.Bytes())
 		wantErr := "array length is incorrect: 4"
 
 		if gotErr.Error() != wantErr {

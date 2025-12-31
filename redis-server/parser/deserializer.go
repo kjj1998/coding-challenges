@@ -1,15 +1,12 @@
 package parser
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-func Deserialize(buf bytes.Buffer) ([]string, error) {
-	bytes := buf.Bytes()
-
+func Deserialize(bytes []byte) ([]string, error) {
 	switch bytes[0] {
 	case '+':
 		result := parseSimpleString(bytes)
