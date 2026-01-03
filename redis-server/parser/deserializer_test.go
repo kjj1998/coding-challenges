@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"bufio"
 	"bytes"
+	"errors"
 	"testing"
 )
 
@@ -12,6 +14,22 @@ func TestDeserialize(t *testing.T) {
 
 		got, _ := Deserialize(serializedCommand.Bytes())
 		want := []string{"OK"}
+
+		for i := range got {
+			if got[i] != want[i] {
+				t.Errorf("got %q want %q", got[i], want[i])
+			}
+		}
+	})
+
+	// deserialize simple string
+	t.Run("Deserialize +OK\r\n", func(t *testing.T) {
+		data := []byte("+OK\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		got, _ := ReadSimpleString(bufio.NewReader(reader))
+		want := []byte("OK")
 
 		for i := range got {
 			if got[i] != want[i] {
@@ -136,72 +154,112 @@ func TestDeserialize(t *testing.T) {
 		}
 	})
 
+	/* ARRAYS */
 	// deserialize array with two bulk strings
-	t.Run("Deserialize *2\r\n$5\r\nhello\r\n$3\r\nbar\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*2\r\n$5\r\nhello\r\n$3\r\nbar\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"hello", "bar"}
+	t.Run("Deserialize *2\r\n$5\r\nhello\r\n$5\r\nworld\r\n", func(t *testing.T) {
+		data := []byte("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		got, _ := DeserializeArray(bufio.NewReader(reader))
+		want := [][]byte{[]byte("hello"), []byte("world")}
 
 		for i := range got {
-			if got[i] != want[i] {
+			if string(got[i].([]byte)) != string(want[i]) {
 				t.Errorf("got %q want %q", got[i], want[i])
 			}
 		}
 	})
 
-	// deserialize array with one bulk string
-	t.Run("Deserialize *1\r\n$4\r\nping\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*1\r\n$4\r\nping\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"ping"}
+	// deserialize array with mixed types for elements
+	t.Run("Deserialize *3\r\n$5\r\nhello\r\n:555\r\n$5\r\nworld\r\n", func(t *testing.T) {
+		data := []byte("*3\r\n$5\r\nhello\r\n:555\r\n$5\r\nworld\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		got, _ := DeserializeArray(bufio.NewReader(reader))
+		want := [][]byte{[]byte("hello"), []byte("555"), []byte("world")}
 
 		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize array with two bulk strings
-	t.Run("Deserialize *2\r\n$4\r\necho\r\n$11\r\nhello world\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*2\r\n$4\r\necho\r\n$11\r\nhello world\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"echo", "hello world"}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize array with two bulk strings
-	t.Run("Deserialize *2\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*2\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"get", "key"}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize bulk string with no string
-	t.Run("Deserialize $0\r\n\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$0\r\n\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{""}
-
-		for i := range got {
-			if got[i] != want[i] {
+			if string(got[i].([]byte)) != string(want[i]) {
 				t.Errorf("got %q want %q", got[i], want[i])
 			}
 		}
 	})
 
 	// deserialize array with no elements
+	t.Run("Deserialize *0\r\n", func(t *testing.T) {
+		data := []byte("*0\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		got, _ := DeserializeArray(bufio.NewReader(reader))
+		want := [][]byte{}
+
+		if len(got) != len(want) {
+			t.Errorf("got %q want %q", got, want)
+		}
+	})
+
+	// deserialize array with nested arrays within
+	t.Run("Deserialize nested array *3\r\n*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n:555\r\n$5\r\nworld\r\n", func(t *testing.T) {
+		data := []byte("*3\r\n*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n:555\r\n$5\r\nworld\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		got, _ := DeserializeArray(bufio.NewReader(reader))
+		want := []any{[][]byte{[]byte("hello"), []byte("world")}, []byte("555"), []byte("world")}
+
+		for i := range got {
+			if i == 0 {
+				gotArr := got[i].([]any)
+				wantArr := want[i].([][]byte)
+				for j := range gotArr {
+					gotString := string(gotArr[j].([]byte))
+					wantString := string(wantArr[j])
+					if gotString != wantString {
+						t.Errorf("got %q want %q", gotString, wantString)
+					}
+				}
+			} else {
+				gotString := string(got[i].([]byte))
+				wantString := string(want[i].([]byte))
+				if gotString != wantString {
+					t.Errorf("got %q want %q", gotString, wantString)
+				}
+			}
+		}
+	})
+
+	// deserialize array where the length of the array given is lesser than the actual number of elements
+	t.Run("Deserialize *1\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
+		data := []byte("*1\r\n$3\r\nget\r\n$3\r\nkey\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		_, gotErr := DeserializeArray(bufio.NewReader(reader))
+		wantErr := errors.New("incorrect number of elements given: 1")
+
+		if gotErr.Error() != wantErr.Error() {
+			t.Errorf("got %q want %q", gotErr.Error(), wantErr.Error())
+		}
+	})
+
+	// deserialize array where the length of the array given is more than the actual number of elements
+	t.Run("Deserialize *4\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
+		data := []byte("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
+
+		_, gotErr := DeserializeArray(bufio.NewReader(reader))
+		wantErr := errors.New("incorrect number of elements given: 4")
+
+		if gotErr.Error() != wantErr.Error() {
+			t.Errorf("got %q want %q", gotErr.Error(), wantErr.Error())
+		}
+	})
+
+	// deserialize bulk string with no string
 	t.Run("Deserialize $0\r\n\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("$0\r\n\r\n")
 		got, _ := Deserialize(serializedCommand.Bytes())
@@ -224,41 +282,6 @@ func TestDeserialize(t *testing.T) {
 			if got[i] != want[i] {
 				t.Errorf("got %q want %q", got[i], want[i])
 			}
-		}
-	})
-
-	// deserialize null value for array
-	t.Run("Deserialize *-1\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*-1\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"null"}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize array where the length of the array given is lesser than the actual number of elements
-	t.Run("Deserialize *1\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*1\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		_, gotErr := Deserialize(serializedCommand.Bytes())
-		wantErr := "array length is incorrect: 1"
-
-		if gotErr.Error() != wantErr {
-			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
-		}
-	})
-
-	// deserialize array where the length of the array given is more than the actual number of elements
-	t.Run("Deserialize *4\r\n$3\r\nget\r\n$3\r\nkey\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("*4\r\n$3\r\nget\r\n$3\r\nkey\r\n")
-		_, gotErr := Deserialize(serializedCommand.Bytes())
-		wantErr := "array length is incorrect: 4"
-
-		if gotErr.Error() != wantErr {
-			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
 		}
 	})
 }

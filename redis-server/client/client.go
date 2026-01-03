@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 
 	if len(flag.Args()) > 0 {
-		serverAddress := "localhost:6379"
+		serverAddress := "localhost:6395"
 		conn, err := net.Dial("tcp", serverAddress)
 		if err != nil {
 			log.Fatalf("Error connecting: %v\n", err)
@@ -48,8 +48,11 @@ func main() {
 }
 
 func deserialize(bytes []byte) ([]string, error) {
-	commands, err := parser.Deserialize(bytes)
+	if len(bytes) == 0 {
+		return []string{"(nil)"}, nil
+	}
 
+	commands, err := parser.Deserialize(bytes)
 	if err != nil {
 		return []string{}, err
 	}

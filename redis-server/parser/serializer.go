@@ -28,3 +28,16 @@ func Serialize(commands []string) (bytes.Buffer, error) {
 func SerializeSimpleString(command string) []byte {
 	return []byte("+" + command + "\r\n")
 }
+
+func SerializeBulkString(command []byte) []byte {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "$%d\r\n", len(command))
+	buf.Write(command)
+	fmt.Fprint(&buf, "\r\n")
+
+	return buf.Bytes()
+}
+
+func SerializeNull() []byte {
+	return []byte("_\r\n")
+}

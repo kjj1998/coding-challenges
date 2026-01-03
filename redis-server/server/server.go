@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -14,7 +15,7 @@ var dictionary map[string]string
 
 func main() {
 	dictionary = make(map[string]string)
-	listener, err := net.Listen("tcp", ":6379")
+	listener, err := net.Listen("tcp", ":6395")
 	if err != nil {
 		log.Fatal("Error listening:", err)
 	}
@@ -35,57 +36,92 @@ func main() {
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	message, err := io.ReadAll(conn)
-	if err != nil {
-		log.Printf("Read error: %v", err)
-		return
-	}
+	reader := bufio.NewReader(conn)
+	for {
+		message, err := readRESPMessage(reader)
+		if err != nil && err != io.EOF {
+			log.Printf("Read error: %v", err)
+			return
+		}
+		if err == io.EOF {
+			break
+		}
 
-	deserializedCommands, err := deserializeCommands(message)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	if len(deserializedCommands) == 0 {
-		log.Fatal("No commands deserialized")
-	}
-	fmt.Println(deserializedCommands)
+		response := commandSelector(message)
 
-	response := commandSelector(deserializedCommands)
-
-	_, err = conn.Write(response)
-	if err != nil {
-		log.Printf("Server write error: %v", err)
+		_, err = conn.Write(response)
+		if err != nil {
+			log.Printf("Server write error: %v", err)
+		}
 	}
 }
 
-func deserializeCommands(bytes []byte) ([]string, error) {
-	commands, err := parser.Deserialize(bytes)
-
+func readRESPMessage(reader *bufio.Reader) ([][]byte, error) {
+	typeByte, err := reader.ReadByte()
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 
-	return commands, nil
+	// All messages from the client must be an array
+	if typeByte != '*' {
+		return nil, fmt.Errorf("All messages from the client must be of type array")
+	}
+	array, err := parser.DeserializeArray(reader)
+
+	results := make([][]byte, len(array))
+	for i, v := range array {
+		byteSlice, ok := v.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("Cannot be converted to []byte")
+		}
+		results[i] = byteSlice
+	}
+
+	return results, nil
 }
 
-func commandSelector(commands []string) []byte {
-	command := strings.ToLower(commands[0])
+// func deserializeCommands(bytes []byte) ([]string, error) {
+// 	if len(bytes) == 0 {
+// 		return []string{}, nil
+// 	}
+
+// 	commands, err := parser.Deserialize(bytes)
+
+// 	if err != nil {
+// 		return []string{}, err
+// 	}
+
+// 	return commands, nil
+// }
+
+func commandSelector(commands [][]byte) []byte {
+	if len(commands) == 0 {
+		return []byte("_n\r\n")
+	}
+
+	command := strings.ToLower(string(commands[0]))
 
 	switch command {
 	case "ping":
 		if len(commands) == 1 {
-			return []byte("PONG")
+			return parser.SerializeSimpleString("PONG")
 		} else {
-			return []byte(strings.Join(commands[1:], " "))
+			commandStrings := make([]string, len(commands)-1)
+			for i, v := range commands[1:] {
+				commandStrings[i] = string(v)
+			}
+
+			return parser.SerializeSimpleString(strings.Join(commandStrings, " "))
+			// return []byte(strings.Join(commands[1:], " "))
 		}
-	case "echo":
-		return []byte(strings.Join(commands[1:], " "))
-	case "set":
-		dictionary[commands[1]] = commands[2]
-		return parser.SerializeSimpleString("OK")
-	case "get":
-		return []byte(dictionary[commands[1]])
+	// case "echo":
+	// 	return []byte(strings.Join(commands[1:], " "))
+	// case "set":
+	// 	dictionary[commands[1]] = commands[2]
+	// 	return parser.SerializeSimpleString("OK")
+	// case "get":
+	// 	return []byte(dictionary[commands[1]])
 	default:
-		return []byte(strings.Join(commands[1:], " "))
+		return []byte("_n\r\n")
 	}
 }
