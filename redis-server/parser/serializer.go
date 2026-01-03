@@ -48,3 +48,7 @@ func SerializeInteger(intVal int) []byte {
 func SerializeNull() []byte {
 	return []byte("_\r\n")
 }
+
+func SerializeError(command string) []byte {
+	return []byte("-ERR" + " " + command + "\r\n")
+}

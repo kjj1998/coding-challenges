@@ -8,6 +8,7 @@ import (
 )
 
 func TestDeserialize(t *testing.T) {
+	/* Simple String */
 	// deserialize simple string
 	t.Run("Deserialize +OK\r\n", func(t *testing.T) {
 		serializedCommand := bytes.NewBufferString("+OK\r\n")
