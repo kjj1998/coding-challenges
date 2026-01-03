@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 // Serialize returns the serialized form of the commands given.
@@ -36,6 +37,12 @@ func SerializeBulkString(command []byte) []byte {
 	fmt.Fprint(&buf, "\r\n")
 
 	return buf.Bytes()
+}
+
+func SerializeInteger(intVal int) []byte {
+	intString := strconv.Itoa(intVal)
+
+	return []byte(":" + intString + "\r\n")
 }
 
 func SerializeNull() []byte {

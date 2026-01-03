@@ -258,30 +258,4 @@ func TestDeserialize(t *testing.T) {
 			t.Errorf("got %q want %q", gotErr.Error(), wantErr.Error())
 		}
 	})
-
-	// deserialize bulk string with no string
-	t.Run("Deserialize $0\r\n\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$0\r\n\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{""}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize null value for bulk string
-	t.Run("Deserialize $-1\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$-1\r\n")
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"null"}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
 }

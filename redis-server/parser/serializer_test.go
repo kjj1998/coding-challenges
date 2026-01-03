@@ -58,6 +58,16 @@ func TestSerialize(t *testing.T) {
 		}
 	})
 
+	// Serialize 1000 as integer
+	t.Run("Serialize 1000 to :1000\r\n", func(t *testing.T) {
+		got := string(SerializeInteger(1000))
+		want := ":1000\r\n"
+
+		if got != want {
+			t.Errorf("got %q want %q", got, want)
+		}
+	})
+
 	// Serialize null
 	t.Run("Serialize null to _\r\n", func(t *testing.T) {
 		got := string(SerializeNull())
