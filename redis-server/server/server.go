@@ -112,7 +112,6 @@ func commandSelector(commands [][]byte) []byte {
 			}
 
 			return parser.SerializeSimpleString(strings.Join(commandStrings, " "))
-			// return []byte(strings.Join(commands[1:], " "))
 		}
 	// case "echo":
 	// 	return []byte(strings.Join(commands[1:], " "))

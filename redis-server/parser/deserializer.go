@@ -163,7 +163,7 @@ func parseArray(bytes []byte) ([]string, error) {
 	return results, nil
 }
 
-func ReadSimpleString(reader *bufio.Reader) ([]byte, error) {
+func DeserializeSimpleString(reader *bufio.Reader) ([]byte, error) {
 	simpleString, err := reader.ReadBytes('\n')
 	if err != nil {
 		return nil, err
@@ -174,7 +174,22 @@ func ReadSimpleString(reader *bufio.Reader) ([]byte, error) {
 	return simpleString, nil
 }
 
-func ReadBulkString(reader *bufio.Reader) ([]byte, error) {
+func DeserializeError(reader *bufio.Reader) ([]byte, error) {
+	errorString, err := reader.ReadBytes('\n')
+	if err != nil {
+		return nil, err
+	}
+
+	errorString = bytes.TrimSpace(errorString)
+
+	if !strings.HasPrefix(string(errorString), "ERR") {
+		return []byte{}, fmt.Errorf("Error message must begin with ERR: %s", errorString)
+	}
+
+	return errorString, nil
+}
+
+func DeserializeBulkString(reader *bufio.Reader) ([]byte, error) {
 	lengthLine, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, err
@@ -182,7 +197,7 @@ func ReadBulkString(reader *bufio.Reader) ([]byte, error) {
 
 	length, err := strconv.Atoi(strings.TrimSpace(lengthLine))
 	if err != nil {
-		return nil, fmt.Errorf("non integer value given for bulk string length: %s", lengthLine)
+		return nil, fmt.Errorf("non integer value given for bulk string length: %s", strings.TrimSpace(lengthLine))
 	}
 
 	bulkStringLine, err := reader.ReadString('\n')
@@ -198,7 +213,7 @@ func ReadBulkString(reader *bufio.Reader) ([]byte, error) {
 	return []byte(bulkString), nil
 }
 
-func ReadInteger(reader *bufio.Reader) ([]byte, error) {
+func DeserializeInteger(reader *bufio.Reader) ([]byte, error) {
 	integerString, err := reader.ReadBytes('\n')
 	if err != nil {
 		return nil, err
@@ -266,21 +281,21 @@ func DeserializeSelector(typeByte byte, reader *bufio.Reader) ([]byte, error) {
 	switch typeByte {
 	case '+':
 		// simple string
-		simpleString, err := ReadSimpleString(reader)
+		simpleString, err := DeserializeSimpleString(reader)
 		if err != nil {
 			return nil, err
 		}
 		return simpleString, err
 	case '$':
 		// bulk string
-		bulkString, err := ReadBulkString(reader)
+		bulkString, err := DeserializeBulkString(reader)
 		if err != nil {
 			return nil, err
 		}
 		return bulkString, err
 	case ':':
 		// integer
-		integer, err := ReadInteger(reader)
+		integer, err := DeserializeInteger(reader)
 		if err != nil {
 			return nil, err
 		}

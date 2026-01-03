@@ -10,68 +10,55 @@ import (
 func TestDeserialize(t *testing.T) {
 	/* Simple String */
 	// deserialize simple string
-	t.Run("Deserialize +OK\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("+OK\r\n")
-
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"OK"}
-
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
-		}
-	})
-
-	// deserialize simple string
-	t.Run("Deserialize +OK\r\n", func(t *testing.T) {
+	t.Run("Deserialize +OK\r\n to OK", func(t *testing.T) {
 		data := []byte("+OK\r\n")
 		reader := bytes.NewReader(data)
 		reader.ReadByte()
 
-		got, _ := ReadSimpleString(bufio.NewReader(reader))
+		got, _ := DeserializeSimpleString(bufio.NewReader(reader))
 		want := []byte("OK")
 
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
+		if string(got) != string(want) {
+			t.Errorf("got %s, want %s", string(got), string(want))
 		}
 	})
 
 	// deserialize simple string
 	t.Run("Deserialize +hello world\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("+hello world\r\n")
+		data := []byte("+hello world\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"hello world"}
+		got, _ := DeserializeSimpleString(bufio.NewReader(reader))
+		want := []byte("hello world")
 
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
+		if string(got) != string(want) {
+			t.Errorf("got %s, want %s", string(got), string(want))
 		}
 	})
 
+	/* Error */
 	// deserialize error message
 	t.Run("Deserialize -ERR unknown command\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("-ERR unknown command\r\n")
+		data := []byte("-ERR unknown command\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"ERR unknown command"}
+		got, _ := DeserializeError(bufio.NewReader(reader))
+		want := []byte("ERR unknown command")
 
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
+		if string(got) != string(want) {
+			t.Errorf("got %s, want %s", string(got), string(want))
 		}
 	})
 
-	// error message not starting with ERR
+	// deserialize error message not starting with ERR
 	t.Run("Deserialize -unknown command\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("-unknown command\r\n")
+		data := []byte("-unknown command\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		_, gotErr := Deserialize(serializedCommand.Bytes())
+		_, gotErr := DeserializeError(bufio.NewReader(reader))
 		wantErr := "Error message must begin with ERR: unknown command"
 
 		if gotErr.Error() != wantErr {
@@ -79,38 +66,44 @@ func TestDeserialize(t *testing.T) {
 		}
 	})
 
+	/* Integer */
 	// deserialize integer
 	t.Run("Deserialize :1000\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString(":1000\r\n")
+		data := []byte(":1000\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"1000"}
+		got, _ := DeserializeInteger(bufio.NewReader(reader))
+		want := []byte("1000")
 
-		for i := range got {
-			if got[i] != want[i] {
-				t.Errorf("got %q want %q", got[i], want[i])
-			}
+		if string(got) != string(want) {
+			t.Errorf("got %q want %q", string(got), string(want))
 		}
 	})
 
 	// non integer supplied
 	t.Run("Deserialize :abcde\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString(":abcde\r\n")
+		data := []byte(":abcde\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		_, gotErr := Deserialize(serializedCommand.Bytes())
-		wantErr := "non integer input: abcde"
+		_, gotErr := DeserializeInteger(bufio.NewReader(reader))
+		wantErr := "non integer value given: abcde"
 
 		if gotErr.Error() != wantErr {
 			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
 		}
 	})
 
+	/* Bulk String */
 	// deserialize bulk string
 	t.Run("Deserialize $5\r\nhello\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$5\r\nhello\r\n")
+		data := []byte("$5\r\nhello\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		got, _ := Deserialize(serializedCommand.Bytes())
-		want := []string{"hello"}
+		got, _ := DeserializeBulkString(bufio.NewReader(reader))
+		want := []byte("hello")
 
 		for i := range got {
 			if got[i] != want[i] {
@@ -121,9 +114,11 @@ func TestDeserialize(t *testing.T) {
 
 	// non integer bulk string length input
 	t.Run("Deserialize $abcde\r\nhello\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$abcde\r\nhello\r\n")
+		data := []byte("$abcde\r\nhello\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		_, gotErr := Deserialize(serializedCommand.Bytes())
+		_, gotErr := DeserializeBulkString(bufio.NewReader(reader))
 		wantErr := "non integer value given for bulk string length: abcde"
 
 		if gotErr.Error() != wantErr {
@@ -133,10 +128,12 @@ func TestDeserialize(t *testing.T) {
 
 	// bulk string length input greater than length of bulk string
 	t.Run("Deserialize $10\r\nhello\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$10\r\nhello\r\n")
+		data := []byte("$10\r\nhello\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		_, gotErr := Deserialize(serializedCommand.Bytes())
-		wantErr := "incorrect bulk string length input: 10"
+		_, gotErr := DeserializeBulkString(bufio.NewReader(reader))
+		wantErr := "incorrect bulk string byte length given: 10"
 
 		if gotErr.Error() != wantErr {
 			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
@@ -145,10 +142,12 @@ func TestDeserialize(t *testing.T) {
 
 	// bulk string length input lesser than length of bulk string
 	t.Run("Deserialize $3\r\nhelloworld\r\n", func(t *testing.T) {
-		serializedCommand := bytes.NewBufferString("$3\r\nhelloworld\r\n")
+		data := []byte("$3\r\nhelloworld\r\n")
+		reader := bytes.NewReader(data)
+		reader.ReadByte()
 
-		_, gotErr := Deserialize(serializedCommand.Bytes())
-		wantErr := "incorrect bulk string length input: 3"
+		_, gotErr := DeserializeBulkString(bufio.NewReader(reader))
+		wantErr := "incorrect bulk string byte length given: 3"
 
 		if gotErr.Error() != wantErr {
 			t.Errorf("got %q want %q", gotErr.Error(), wantErr)
@@ -157,7 +156,7 @@ func TestDeserialize(t *testing.T) {
 
 	/* ARRAYS */
 	// deserialize array with two bulk strings
-	t.Run("Deserialize *2\r\n$5\r\nhello\r\n$5\r\nworld\r\n", func(t *testing.T) {
+	t.Run("Deserialize *2\r\n$5\r\nhello\r\n$5\r\nworld\r\n to [hello, world]", func(t *testing.T) {
 		data := []byte("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n")
 		reader := bytes.NewReader(data)
 		reader.ReadByte()
@@ -173,7 +172,7 @@ func TestDeserialize(t *testing.T) {
 	})
 
 	// deserialize array with mixed types for elements
-	t.Run("Deserialize *3\r\n$5\r\nhello\r\n:555\r\n$5\r\nworld\r\n", func(t *testing.T) {
+	t.Run("Deserialize *3\r\n$5\r\nhello\r\n:555\r\n$5\r\nworld\r\n to [hello, 555, world]", func(t *testing.T) {
 		data := []byte("*3\r\n$5\r\nhello\r\n:555\r\n$5\r\nworld\r\n")
 		reader := bytes.NewReader(data)
 		reader.ReadByte()
@@ -189,7 +188,7 @@ func TestDeserialize(t *testing.T) {
 	})
 
 	// deserialize array with no elements
-	t.Run("Deserialize *0\r\n", func(t *testing.T) {
+	t.Run("Deserialize *0\r\n to []", func(t *testing.T) {
 		data := []byte("*0\r\n")
 		reader := bytes.NewReader(data)
 		reader.ReadByte()
@@ -203,7 +202,7 @@ func TestDeserialize(t *testing.T) {
 	})
 
 	// deserialize array with nested arrays within
-	t.Run("Deserialize nested array *3\r\n*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n:555\r\n$5\r\nworld\r\n", func(t *testing.T) {
+	t.Run("Deserialize nested array *3\r\n*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n:555\r\n$5\r\nworld\r\n to [[hello, world], 555, world]", func(t *testing.T) {
 		data := []byte("*3\r\n*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n:555\r\n$5\r\nworld\r\n")
 		reader := bytes.NewReader(data)
 		reader.ReadByte()
